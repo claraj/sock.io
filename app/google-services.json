@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "513424033279",
+    "firebase_url": "https://socks-c901d.firebaseio.com",
+    "project_id": "socks-c901d",
+    "storage_bucket": "socks-c901d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513424033279:android:a1eb7010b7b8821a",
+        "android_client_info": {
+          "package_name": "com.clara.socksio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "513424033279-ct115m8tmktgjt6j2h96df5c6s3u14l5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABbbrTnkCYasHi9szlC1GSar4mO1mTeBI"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
