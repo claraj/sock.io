@@ -19,6 +19,10 @@ public class SockView extends View {
 	private int centerX;
 	private int centerY;
 
+	private float x, y;
+	private final Paint mPaint = new Paint();
+	private int mSize = 20;
+
 
 	public float getHeadX() {
 		return segments.getFirst().x;
@@ -26,6 +30,10 @@ public class SockView extends View {
 
 	public float getHeadY() {
 		return segments.getFirst().y;
+	}
+
+	public int getSize() {
+		return mSize;
 	}
 
 	//List of segments central co-ordinates
@@ -45,8 +53,8 @@ public class SockView extends View {
 		}
 
 		public void shift(int dx, int dy) {
-			x = x + dx;
-			y = y + dy;
+			x = x - dx;
+			y = y - dy;
 		}
 	}
 
@@ -69,9 +77,7 @@ public class SockView extends View {
 		this.y = y;
 	}
 
-	private float x, y;
-	private final Paint mPaint = new Paint();
-	private float mSize = 20;
+
 
 	public SockView(Context context, int centerx, int centery) {
 		super(context);
@@ -87,20 +93,6 @@ public class SockView extends View {
 		this.x = x ; this.y = y;
 		mPaint.setStyle(Paint.Style.FILL);
 	}
-
-
-//	public SockView(Context context) {
-//		super(context);
-//
-//		segments = new LinkedList<>();
-//		segments.add(new Segment(0, 0));
-//
-//		Log.i(TAG, "new sock" + segments);
-//
-//		//this.x = x ; this.y = y;
-//		mPaint.setStyle(Paint.Style.FILL);
-//	}
-
 
 
 	//Add to end of segments (?)

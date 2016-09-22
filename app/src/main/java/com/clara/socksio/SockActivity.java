@@ -19,8 +19,10 @@ import java.util.Random;
 
 
 /** TODO restarting not working properly - can restart +1 snake with +1 clock ticking. Also remove message.
- * TODO Scroll background, instead of moving sock. Boundaries!
+ * TODO Boundaries!
  * TODO Firebase - adversarial socks.
+ * TODO adversarial tumble dryers
+ * TODO handle rotation
  * */
 
 public class SockActivity extends AppCompatActivity {
@@ -71,16 +73,14 @@ public class SockActivity extends AppCompatActivity {
 
 	private void restart() {
 
+		//reset score, remove message
 		score = 0;
-
 		mGameOver.setVisibility(TextView.INVISIBLE);
 
-		//remove listener
-
+		//remove listener from TextView
 		mGameOver.setOnClickListener(null); // no more restarting!
 
 		//remove old specks
-
 		mFrame.removeView(mSock);
 
 		if (mSpecks != null) {
@@ -89,10 +89,9 @@ public class SockActivity extends AppCompatActivity {
 			}
 		}
 
-		mSpecks = null;
-
-		makeSpecksAddtoView();
-
+		//Create new specks...
+		makeSpecksAddToView();
+		//And new sock
 		mSock = new SockView(SockActivity.this, centerX, centerY);
 		mSock.addSegmentToEnd(50, 50);
 		mSock.addSegmentToEnd(40, 40);
@@ -100,6 +99,7 @@ public class SockActivity extends AppCompatActivity {
 		mFrame.addView(mSock);
 
 		updateSock();   // go!
+		updateSpecks();
 
 		//** Stack overflow ftw http://stackoverflow.com/questions/10845172/android-running-a-method-periodically-using-postdelayed-call */
 		final Handler handler = new Handler();
@@ -110,11 +110,10 @@ public class SockActivity extends AppCompatActivity {
 				updateSock();
 				updateSpecks();
 				if (!endGame()) {
-					handler.postDelayed(this, period);
+					handler.postDelayed(this, period); //run again!
 				}
 			}
 		}, period);
-
 
 		mFrame.setOnTouchListener(new View.OnTouchListener() {
 			@Override
@@ -154,14 +153,16 @@ public class SockActivity extends AppCompatActivity {
 						//Angle is tan(angle) = opp/adj = xDelta / yDelta
 						angle = (float) Math.atan(yDelta / xDelta);
 
-
-						if (xDelta < 0 ) { angle += Math.PI; };
+						if (xDelta < 0 ) { angle += Math.PI; };  //mathy fix
 
 						//So, scaling to triangle with hypotenuse = maxDistanceMoved
 						//    sin(angle) = opp / hyp =  OR  opp = xdistmove = sin(angle) * hyp
 						//    cos(angle) = adj / hyp    OR  adj = ydistmove = cos(angle) * hyp
 						xMoveDist = (float) Math.cos(angle) * maxDistanceMoved;
 						yMoveDist = (float) Math.sin(angle) * maxDistanceMoved;
+
+//						xMoveDist = -xMoveDist;
+//						yMoveDist = -yMoveDist;
 
 
 						Log.w(TAG, "Angle in rads " + angle + " headX " + sockHeadX + " headY " + sockHeadY + " xtouch " + touchX + " y touch " + touchY + " xdelta " + xDelta + " ydelta " + yDelta + " xmovedist " + xMoveDist + " ymovedist " + yMoveDist);
@@ -177,23 +178,15 @@ public class SockActivity extends AppCompatActivity {
 
 
 
-	private void makeSpecksAddtoView() {
-
-
+	private void makeSpecksAddToView() {
 
 		mSpecks = new LinkedList<>();
 
 		for (int s = 0 ; s < speckCount ; s++) {
-
 			SpeckView speck = new SpeckView(this, maxX, maxY);
-
-			//speck.setLayoutParams(new ActionBar.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 			mSpecks.add(speck);
 			mFrame.addView(speck);
-
 		}
-
-
 		Log.i(TAG, "Added initial specks: " + mSpecks);
 
 	}
@@ -202,6 +195,7 @@ public class SockActivity extends AppCompatActivity {
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
 
+		//Mostly figuring out what size the screen is
 		Log.i(TAG, mFrame.getMeasuredHeight() + " " + mFrame.getMeasuredWidth());
 
 		maxX = mFrame.getWidth();
@@ -210,35 +204,43 @@ public class SockActivity extends AppCompatActivity {
 		centerX = (int) maxX / 2;
 		centerY = (int) maxY / 2;
 
+		//And start game.
 		restart();
 	}
 
+
     private boolean endGame() {
-	    //sock off screen?
+
+		//Check various ways the game can end
+
+	    //sock off screen? This isn't possible with the snake centered and background scrolling.
 
 		mGameOver.setVisibility(TextView.VISIBLE);
 		mGameOver.setOnClickListener(restartListener);
-
 
 		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
 			Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
 
 			Log.i(TAG, "hit wall");
 
-			mGameOver.setText("YOU HIT THE WALL, YOU LOSER\nSCORE = " + score);
+			mGameOver.setText("YOU HIT THE WALL, YOU LOSE\nSCORE = " + score);
 			return true;
 		}
 
+		//But if all specks eaten
 		if (mSpecks.size() == 0) {
 			//all specks eaten
 
-			mGameOver.setText("ATE ALL THE SPECKS, YOU LARDY THING\n SCORE = " + score);
+			mGameOver.setText("ATE ALL THE SPECKS\n SCORE = " + score);
 
 			Log.i(TAG, "eaten all specks");
 
-			return true;   //todo put back
+			return true;
 
 		}
+
+
+		//TODO adversarial washing machines eat sock
 
 		Log.i(TAG, "game on");
 		return false;
@@ -289,7 +291,7 @@ public class SockActivity extends AppCompatActivity {
 
 	private boolean intersects(SpeckView speck, SockView sock) {
 
-		int intersect = 20;
+		int intersect = sock.getSize();
 
 		int xdif = Math.abs((int)sock.getHeadX() - speck.x);
 		int ydif = Math.abs((int)sock.getHeadY() - speck.y);
