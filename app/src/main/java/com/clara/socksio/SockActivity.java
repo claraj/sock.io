@@ -15,7 +15,6 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import java.util.LinkedList;
-import java.util.Random;
 
 
 /** TODO restarting not working properly - can restart +1 snake with +1 clock ticking. Also remove message.
@@ -50,6 +49,7 @@ public class SockActivity extends AppCompatActivity {
 
 	private int centerX;
 	private int centerY;
+	private int worldRadius = 2000;
 
 	private float score = 0;
 
@@ -97,6 +97,11 @@ public class SockActivity extends AppCompatActivity {
 		mSock.addSegmentToEnd(40, 40);
 
 		mFrame.addView(mSock);
+
+		//and add boundary
+
+		WorldView world = new WorldView(this, centerX, centerY, worldRadius);
+		mFrame.addView(world);
 
 		updateSock();   // go!
 		updateSpecks();

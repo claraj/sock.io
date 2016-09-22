@@ -49,7 +49,6 @@ class SpeckView extends View {
 	protected void onDraw(Canvas canvas) {
 		mPaint.setStyle(Paint.Style.FILL);
 		mPaint.setARGB(170, 255, 255, 255);  //white transparent
-
 		canvas.drawCircle(x, y, size, mPaint);
 
 	}
