@@ -3,7 +3,6 @@ package com.clara.socksio;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,14 +18,10 @@ import java.util.LinkedList;
 import java.util.Random;
 
 
-/** Drag finger to draw chain of circles. Circles disappear when finger lifted.  */
-
-/** Goal: user holds finger down. Sock will follow finger.
- *
- *
- * TODO correctly follow touchevents - works going down, is backwards going up
- * TODO Correctly identify if sock has touched speck
- * TODO game start correctly, sock should be moving at start. */
+/** TODO restarting not working properly - can restart +1 snake
+ * TODO Scroll background, instead of moving snake
+ * TODO Firebase - adversarial socks.
+ * */
 
 public class SockActivity extends AppCompatActivity {
 
@@ -40,13 +35,13 @@ public class SockActivity extends AppCompatActivity {
 	private SockView mSock;
 	private LinkedList<SpeckView> mSpecks;
 
-	private int speckCount = 10;
+	private int speckCount = 20;
 
-	private long period = 500;
+	private long period = 100;
 	private long maxDistanceMoved = 20;
-	private float angle = -1;
-	private float xMoveDist;
-	private float yMoveDist;
+	private float angle = 1;
+	private float xMoveDist = 14f;
+	private float yMoveDist = 14f;
 
 	private float maxX;
 	private float maxY;
@@ -62,9 +57,6 @@ public class SockActivity extends AppCompatActivity {
 		mFrame = (FrameLayout) findViewById(R.id.fullscreen_content);
 		mGameOver = (TextView) findViewById(R.id.game_over_msg);
 
-		maxX = 750;
-		maxY = 1000; //TODO Fix this hack
-
 		restartListener = new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -72,21 +64,35 @@ public class SockActivity extends AppCompatActivity {
 			}
 		};
 
-		restart();
-
 	}
 
 	private void restart() {
 
-		//Create specks
+		score = 0;
+
+		mGameOver.setVisibility(TextView.INVISIBLE);
+
+		//remove listener
+
+		mGameOver.setOnClickListener(null); // no more restarting!
+
+		//remove old specks
+
+		mFrame.removeView(mSock);
+
+		if (mSpecks != null) {
+			for (SpeckView speck : mSpecks) {
+				mFrame.removeView(speck);
+			}
+		}
+
+		mSpecks = null;
 
 		makeSpecksAddtoView();
 
-		//Create SockView
-
 		mSock = new SockView(SockActivity.this, 70, 70);
 		mSock.addSegmentToEnd(50, 50);
-		mSock.addSegmentToEnd(40, 40);    //head at 60,60 ?
+		mSock.addSegmentToEnd(40, 40);
 
 		mFrame.addView(mSock);
 
@@ -106,9 +112,6 @@ public class SockActivity extends AppCompatActivity {
 		}, period);
 
 
-
-
-
 		mFrame.setOnTouchListener(new View.OnTouchListener() {
 			@Override
 			public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -122,7 +125,6 @@ public class SockActivity extends AppCompatActivity {
 				switch (motionEvent.getActionMasked()) {
 
 					case MotionEvent.ACTION_DOWN:{
-						//no break - fall through to action down and move sock
 						Log.i(TAG, "action down");
 					}
 
@@ -160,15 +162,7 @@ public class SockActivity extends AppCompatActivity {
 
 						Log.w(TAG, "Angle in rads " + angle + " headX " + sockHeadX + " headY " + sockHeadY + " xtouch " + touchX + " y touch " + touchY + " xdelta " + xDelta + " ydelta " + yDelta + " xmovedist " + xMoveDist + " ymovedist " + yMoveDist);
 
-
-
 						break;
-					}
-
-					case MotionEvent.ACTION_UP: {
-
-						Log.i(TAG, "action up sock");
-						//mFrame.removeView(mSock);    // uh, no.
 					}
 				}
 
@@ -181,6 +175,8 @@ public class SockActivity extends AppCompatActivity {
 
 	private void makeSpecksAddtoView() {
 
+
+
 		mSpecks = new LinkedList<>();
 
 		for (int s = 0 ; s < speckCount ; s++) {
@@ -192,6 +188,9 @@ public class SockActivity extends AppCompatActivity {
 			mFrame.addView(speck);
 
 		}
+
+
+		Log.i(TAG, "Added intital specks: " + mSpecks);
 
 	}
 
@@ -206,10 +205,8 @@ public class SockActivity extends AppCompatActivity {
 
 		Paint mPaint;
 
-			float x;
-			float y;
-
-
+		int x;
+		int y;
 
 		public SpeckView(Context context, float maxX, float maxY) {
 			super(context);
@@ -218,19 +215,35 @@ public class SockActivity extends AppCompatActivity {
 			x = rnd.nextInt((int)maxX);
 			y = rnd.nextInt((int)maxY);
 			mPaint = new Paint();
+
+			FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size);
+
+			params.leftMargin = x;
+			params.topMargin = y;
+
 		}
 
 		@Override
 		protected void onDraw(Canvas canvas) {
 			mPaint.setStyle(Paint.Style.FILL);
 			mPaint.setARGB(170, 255, 255, 255);  //white transparent
+
 			canvas.drawCircle(x, y, size, mPaint);
+//			canvas.drawCircle(0, 0, size, mPaint);
+
+
 		}
 
 		@Override
 		public String toString() {
 			return "x=" + x + " y=" + y + " eaten? " + eaten;
 		}
+
+
+//		@Override
+//		public void onMeasure(int h, int w) {
+//			setMeasuredDimension(size, size);
+//		}
 
 	}
 
@@ -322,12 +335,12 @@ public class SockActivity extends AppCompatActivity {
 
 			int blue = 255, red=0;
 			for (Segment s : segments) {
-				red = (red+60) % 255;
-				blue = (blue+70) % 255;
+				red = (red+30) % 255;
+				blue = (blue+40) % 255;
 
 				mPaint.setARGB(255, red, 0, blue);
 				canvas.drawCircle(s.x, s.y, mSize, mPaint);
-				Log.i(TAG, "blue = " + blue);
+				//Log.i(TAG, "blue = " + blue);
 			}
 
 		}
@@ -340,43 +353,42 @@ public class SockActivity extends AppCompatActivity {
 	}
 
 	@Override
-	protected void onResume() {
-		super.onResume();
-//		View screen = findViewById(R.id.fullscreen_content);
-//		maxX = screen.getWidth();
-//		maxY = screen.getHeight();
+	public void onWindowFocusChanged(boolean hasFocus) {
 
-		maxY = 1000;
-		maxX = 750;      //todo fix this hack
+		Log.i(TAG, mFrame.getMeasuredHeight() + " " + mFrame.getMeasuredWidth());
 
-		Log.i(TAG, "on resume max x max y " + maxX + " " + maxY);
+		maxX = mFrame.getWidth();
+		maxY = mFrame.getHeight();
+
+		restart();
 	}
 
     private boolean endGame() {
 	    //sock off screen?
+
+		mGameOver.setVisibility(TextView.VISIBLE);
+		mGameOver.setOnClickListener(restartListener);
+
 
 		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
 			Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
 
 			Log.i(TAG, "hit wall");
 
-			mGameOver.setText("YOU HIT THE WALL, YOU LOSER");
-			mGameOver.setVisibility(TextView.VISIBLE);
-			mGameOver.setOnClickListener(restartListener);
+			mGameOver.setText("YOU HIT THE WALL, YOU LOSER\nSCORE = " + score);
 			return true;
 		}
 
 		if (mSpecks.size() == 0) {
 			//all specks eaten
 
-			mGameOver.setText("ATE ALL THE SPECKS, YOU LARDY THING");
-			mGameOver.setVisibility(TextView.VISIBLE);
-			mGameOver.setOnClickListener(restartListener);
+			mGameOver.setText("ATE ALL THE SPECKS, YOU LARDY THING\n SCORE = " + score);
+
 			Log.i(TAG, "eaten all specks");
 
 
 
-			//return true;   //todo put back
+			return true;   //todo put back
 
 		}
 
@@ -397,6 +409,7 @@ public class SockActivity extends AppCompatActivity {
 			if (intersects(speck, mSock)) {
 
 				mFrame.removeView(speck);
+
 				//speck.invalidate(); //?
 				score++;
 				specksEaten++;
@@ -426,31 +439,45 @@ public class SockActivity extends AppCompatActivity {
 	}
 
 
-	private boolean intersects(View view1, View view2) {
+	private boolean intersects(SpeckView speck, SockView sock) {
+
+		int intersect = 20;
+
+		int xdif = Math.abs((int)sock.getHeadX() - speck.x);
+		int ydif = Math.abs((int)sock.getHeadY() - speck.y);
+
+		if (xdif < intersect && ydif < intersect) {
+			return true;
+		}
+
+		return  false;
 
 
-		// <3 stack overflow http://stackoverflow.com/questions/26252710/detect-if-views-are-overlapping.
-
-		int[] firstPosition = new int[2];
-		int[] secondPosition = new int[2];
-
-		view1.getLocationOnScreen(firstPosition);
-		view2.getLocationOnScreen(secondPosition);  //plunks coords into the array argument.
-
-		Log.i(TAG, "View 1 (Speck?) " + firstPosition[0] + " " + firstPosition[1] + " " + view1.getMeasuredHeight() + "  " + view1.getHeight() +  " " + view1.getMeasuredWidth() + " " + view1.getWidth());
-		Log.i(TAG, "View 2 (Sock)" + secondPosition[0] + " " + secondPosition[1] + " " + view2.getMeasuredHeight() + "  " + view2.getHeight() +  " " + view2.getMeasuredWidth() + " " + view2.getWidth());
-
-
-		// Rect constructor parameters: left, top, right, bottom
-		Rect rectFirstView = new Rect(firstPosition[0], firstPosition[1],
-				firstPosition[0] + view1.getMeasuredWidth(), firstPosition[1] + view1.getMeasuredHeight());
-		Rect rectSecondView = new Rect(secondPosition[0], secondPosition[1],
-				secondPosition[0] + view2.getMeasuredWidth(), secondPosition[1] + view2.getMeasuredHeight());
-		boolean i = rectFirstView.intersect(rectSecondView);
-
-		Log.i(TAG, "intersects = "  +i);
-		//end stackoverflow code.
-		return i;
+//
+//
+//
+//		// <3 stack overflow http://stackoverflow.com/questions/26252710/detect-if-views-are-overlapping.
+//
+//		int[] firstPosition = new int[2];
+//		int[] secondPosition = new int[2];
+//
+//		view1.getLocationOnScreen(firstPosition);
+//		view2.getLocationOnScreen(secondPosition);  //plunks coords into the array argument.
+//
+//		Log.i(TAG, "View 1 (Speck?) " + firstPosition[0] + " " + firstPosition[1] + " " + view1.getMeasuredHeight() + "  " + view1.getHeight() +  " " + view1.getMeasuredWidth() + " " + view1.getWidth());
+//		Log.i(TAG, "View 2 (Sock)" + secondPosition[0] + " " + secondPosition[1] + " " + view2.getMeasuredHeight() + "  " + view2.getHeight() +  " " + view2.getMeasuredWidth() + " " + view2.getWidth());
+//
+//
+//		// Rect constructor parameters: left, top, right, bottom
+//		Rect rectFirstView = new Rect(firstPosition[0], firstPosition[1],
+//				firstPosition[0] + view1.getMeasuredWidth(), firstPosition[1] + view1.getMeasuredHeight());
+//		Rect rectSecondView = new Rect(secondPosition[0], secondPosition[1],
+//				secondPosition[0] + view2.getMeasuredWidth(), secondPosition[1] + view2.getMeasuredHeight());
+//		boolean i = rectFirstView.intersect(rectSecondView);
+//
+//		Log.i(TAG, "intersects = "  +i);
+//		//end stackoverflow code.
+//		return i;
 	}
 
 
