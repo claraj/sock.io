@@ -35,6 +35,7 @@ public class SockActivity extends AppCompatActivity {
 
 	private SockView mSock;
 	private LinkedList<SpeckView> mSpecks;
+	private WorldView mWorld;
 
 	private int speckCount = 20;
 
@@ -100,8 +101,8 @@ public class SockActivity extends AppCompatActivity {
 
 		//and add boundary
 
-		WorldView world = new WorldView(this, centerX, centerY, worldRadius);
-		mFrame.addView(world);
+		mWorld = new WorldView(this, centerX, centerY, worldRadius);
+		mFrame.addView(mWorld);
 
 		updateSock();   // go!
 		updateSpecks();
@@ -232,16 +233,24 @@ public class SockActivity extends AppCompatActivity {
 			return true;
 		}
 
+		//Sock leaves border?  TODO this does not work. Fixme.
+
+		Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY() + " world radius " + worldRadius) ;
+
+		if ( Math.abs(mWorld.getCenterX() - mSock.getHeadX()) > worldRadius && Math.abs( mWorld.getCenterY() - mSock.getHeadY() ) > worldRadius) {
+			Log.i(TAG, "Sock leaves world");
+			mGameOver.setText("YOU FELL OFF THE WORLD, YOU LOSE\nSCORE = " + score);
+			return true;
+		}
+
+
 		//But if all specks eaten
 		if (mSpecks.size() == 0) {
 			//all specks eaten
 
 			mGameOver.setText("ATE ALL THE SPECKS\n SCORE = " + score);
-
 			Log.i(TAG, "eaten all specks");
-
 			return true;
-
 		}
 
 
@@ -315,6 +324,8 @@ public class SockActivity extends AppCompatActivity {
 			speck.invalidate();
 		}
 
+		mWorld.shift((int)xMoveDist, (int)yMoveDist);
+		mWorld.invalidate();
 
 	}
 
