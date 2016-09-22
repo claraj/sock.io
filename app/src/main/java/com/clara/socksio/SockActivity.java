@@ -18,8 +18,8 @@ import java.util.LinkedList;
 import java.util.Random;
 
 
-/** TODO restarting not working properly - can restart +1 snake
- * TODO Scroll background, instead of moving snake
+/** TODO restarting not working properly - can restart +1 snake with +1 clock ticking. Also remove message.
+ * TODO Scroll background, instead of moving sock. Boundaries!
  * TODO Firebase - adversarial socks.
  * */
 
@@ -45,6 +45,9 @@ public class SockActivity extends AppCompatActivity {
 
 	private float maxX;
 	private float maxY;
+
+	private int centerX;
+	private int centerY;
 
 	private float score = 0;
 
@@ -90,7 +93,7 @@ public class SockActivity extends AppCompatActivity {
 
 		makeSpecksAddtoView();
 
-		mSock = new SockView(SockActivity.this, 70, 70);
+		mSock = new SockView(SockActivity.this, centerX, centerY);
 		mSock.addSegmentToEnd(50, 50);
 		mSock.addSegmentToEnd(40, 40);
 
@@ -105,6 +108,7 @@ public class SockActivity extends AppCompatActivity {
 			public void run() {
 				Log.i(TAG, "TICK");
 				updateSock();
+				updateSpecks();
 				if (!endGame()) {
 					handler.postDelayed(this, period);
 				}
@@ -190,7 +194,7 @@ public class SockActivity extends AppCompatActivity {
 		}
 
 
-		Log.i(TAG, "Added intital specks: " + mSpecks);
+		Log.i(TAG, "Added initial specks: " + mSpecks);
 
 	}
 
@@ -202,6 +206,9 @@ public class SockActivity extends AppCompatActivity {
 
 		maxX = mFrame.getWidth();
 		maxY = mFrame.getHeight();
+
+		centerX = (int) maxX / 2;
+		centerY = (int) maxY / 2;
 
 		restart();
 	}
@@ -298,7 +305,10 @@ public class SockActivity extends AppCompatActivity {
 	private void updateSpecks() {
 		for (SpeckView speck : mSpecks) {
 			speck.shift((int)xMoveDist, (int)yMoveDist);
+			speck.invalidate();
 		}
+
+
 	}
 
 	private void updateSock() {

@@ -16,6 +16,10 @@ public class SockView extends View {
 
 	private static String TAG = "SOCKVIEW";
 
+	private int centerX;
+	private int centerY;
+
+
 	public float getHeadX() {
 		return segments.getFirst().x;
 	}
@@ -69,11 +73,14 @@ public class SockView extends View {
 	private final Paint mPaint = new Paint();
 	private float mSize = 20;
 
-	public SockView(Context context, float x, float y) {
+	public SockView(Context context, int centerx, int centery) {
 		super(context);
 
+		this.centerX = centerx;
+		this.centerY = centery;
+
 		segments = new LinkedList<>();
-		segments.add(new Segment(x, y));
+		segments.add(new Segment(centerx, centerY));
 
 		Log.i(TAG, "new sock" + segments);
 
@@ -82,17 +89,17 @@ public class SockView extends View {
 	}
 
 
-	public SockView(Context context) {
-		super(context);
-
-		segments = new LinkedList<>();
-		segments.add(new Segment(0, 0));
-
-		Log.i(TAG, "new sock" + segments);
-
-		//this.x = x ; this.y = y;
-		mPaint.setStyle(Paint.Style.FILL);
-	}
+//	public SockView(Context context) {
+//		super(context);
+//
+//		segments = new LinkedList<>();
+//		segments.add(new Segment(0, 0));
+//
+//		Log.i(TAG, "new sock" + segments);
+//
+//		//this.x = x ; this.y = y;
+//		mPaint.setStyle(Paint.Style.FILL);
+//	}
 
 
 
@@ -114,7 +121,7 @@ public class SockView extends View {
 		//shift everything
 
 		shift((int)xDiff, (int)yDiff);
-		segments.addFirst(new Segment(0, 0));
+		segments.addFirst(new Segment(centerX, centerY));
 
 //
 //		//head is first segment
