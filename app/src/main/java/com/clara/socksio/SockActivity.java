@@ -183,7 +183,7 @@ public class SockActivity extends AppCompatActivity {
 
 			SpeckView speck = new SpeckView(this, maxX, maxY);
 
-			speck.setLayoutParams(new ActionBar.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+			//speck.setLayoutParams(new ActionBar.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 			mSpecks.add(speck);
 			mFrame.addView(speck);
 
@@ -194,163 +194,6 @@ public class SockActivity extends AppCompatActivity {
 
 	}
 
-
-	private class SpeckView extends View {
-
-		//Random speck location
-
-		private int size = 10;
-
-		boolean eaten = false;
-
-		Paint mPaint;
-
-		int x;
-		int y;
-
-		public SpeckView(Context context, float maxX, float maxY) {
-			super(context);
-
-			Random rnd = new Random();
-			x = rnd.nextInt((int)maxX);
-			y = rnd.nextInt((int)maxY);
-			mPaint = new Paint();
-
-			FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size);
-
-			params.leftMargin = x;
-			params.topMargin = y;
-
-		}
-
-		@Override
-		protected void onDraw(Canvas canvas) {
-			mPaint.setStyle(Paint.Style.FILL);
-			mPaint.setARGB(170, 255, 255, 255);  //white transparent
-
-			canvas.drawCircle(x, y, size, mPaint);
-//			canvas.drawCircle(0, 0, size, mPaint);
-
-
-		}
-
-		@Override
-		public String toString() {
-			return "x=" + x + " y=" + y + " eaten? " + eaten;
-		}
-
-
-//		@Override
-//		public void onMeasure(int h, int w) {
-//			setMeasuredDimension(size, size);
-//		}
-
-	}
-
-	private class SockView extends View {
-		public float getHeadX() {
-			return segments.getFirst().x;
-		}
-
-		public float getHeadY() {
-			return segments.getFirst().y;
-		}
-
-		//List of segments central co-ordinates
-
-		private class Segment {
-			float x;
-			float y;
-
-			public Segment(float x, float y) {
-				this.x = x;
-				this.y = y;
-			}
-
-			@Override
-			public String toString(){
-				return "[" + x + "," + y + "]";
-			}
-		}
-
-		LinkedList<Segment> segments;
-
-		@Override
-		public void setX(float x) {
-			this.x = x;
-		}
-
-		@Override
-		public void setY(float y) {
-			this.y = y;
-		}
-
-		private float x, y;
-		private final Paint mPaint = new Paint();
-		private float mSize = 20;
-
-		public SockView(Context context, float x, float y) {
-			super(context);
-
-			segments = new LinkedList<>();
-			segments.add(new Segment(x, y));
-
-			Log.i(TAG, "new sock" + segments);
-
-			this.x = x ; this.y = y;
-			mPaint.setStyle(Paint.Style.FILL);
-			mPaint.setARGB(255, 255, 0, 255);  //magenta?
-
-		}
-
-
-		//Add to end of segments (?)
-		public void addSegmentToEnd(float x, float y) {
-			segments.add(new Segment(x, y));         //add to end
-			Log.d(TAG, "Added segment to end " + +x + " " + y +  " " + segments);
-		}
-
-		//Add to start of segments (?)
-		public void addSegmentToStart(float x, float y) {
-			segments.addFirst(new Segment(x, y));         //add to start
-		}
-
-		public void addSegmentRelativeToHead(float xDiff, float yDiff) {
-
-			Log.i(TAG, "Adding segment " + xDiff + " " + yDiff);
-
-			//head is first segment
-			Segment head = segments.get(0);
-			segments.addFirst(new Segment( head.x + xDiff , head.y + yDiff));
-
-		}
-
-		public void removeLast() {
-			segments.removeLast();
-		}
-
-		@Override
-		protected void onDraw(Canvas canvas) {
-			Log.i(TAG, "drawing " + x + " " + y);
-
-			int blue = 255, red=0;
-			for (Segment s : segments) {
-				red = (red+30) % 255;
-				blue = (blue+40) % 255;
-
-				mPaint.setARGB(255, red, 0, blue);
-				canvas.drawCircle(s.x, s.y, mSize, mPaint);
-				//Log.i(TAG, "blue = " + blue);
-			}
-
-		}
-
-		@Override
-		public String toString() {
-			return segments.toString();
-		}
-
-	}
 
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
@@ -385,8 +228,6 @@ public class SockActivity extends AppCompatActivity {
 			mGameOver.setText("ATE ALL THE SPECKS, YOU LARDY THING\n SCORE = " + score);
 
 			Log.i(TAG, "eaten all specks");
-
-
 
 			return true;   //todo put back
 
@@ -424,7 +265,7 @@ public class SockActivity extends AppCompatActivity {
 
 		LinkedList<SpeckView> temp = new LinkedList<>();
 		for (SpeckView speck : mSpecks) {
-			if (speck.eaten == false) {
+			if (!speck.eaten) {
 				temp.add(speck);
 			}
 		}
@@ -451,35 +292,14 @@ public class SockActivity extends AppCompatActivity {
 		}
 
 		return  false;
-
-
-//
-//
-//
-//		// <3 stack overflow http://stackoverflow.com/questions/26252710/detect-if-views-are-overlapping.
-//
-//		int[] firstPosition = new int[2];
-//		int[] secondPosition = new int[2];
-//
-//		view1.getLocationOnScreen(firstPosition);
-//		view2.getLocationOnScreen(secondPosition);  //plunks coords into the array argument.
-//
-//		Log.i(TAG, "View 1 (Speck?) " + firstPosition[0] + " " + firstPosition[1] + " " + view1.getMeasuredHeight() + "  " + view1.getHeight() +  " " + view1.getMeasuredWidth() + " " + view1.getWidth());
-//		Log.i(TAG, "View 2 (Sock)" + secondPosition[0] + " " + secondPosition[1] + " " + view2.getMeasuredHeight() + "  " + view2.getHeight() +  " " + view2.getMeasuredWidth() + " " + view2.getWidth());
-//
-//
-//		// Rect constructor parameters: left, top, right, bottom
-//		Rect rectFirstView = new Rect(firstPosition[0], firstPosition[1],
-//				firstPosition[0] + view1.getMeasuredWidth(), firstPosition[1] + view1.getMeasuredHeight());
-//		Rect rectSecondView = new Rect(secondPosition[0], secondPosition[1],
-//				secondPosition[0] + view2.getMeasuredWidth(), secondPosition[1] + view2.getMeasuredHeight());
-//		boolean i = rectFirstView.intersect(rectSecondView);
-//
-//		Log.i(TAG, "intersects = "  +i);
-//		//end stackoverflow code.
-//		return i;
 	}
 
+
+	private void updateSpecks() {
+		for (SpeckView speck : mSpecks) {
+			speck.shift((int)xMoveDist, (int)yMoveDist);
+		}
+	}
 
 	private void updateSock() {
 
