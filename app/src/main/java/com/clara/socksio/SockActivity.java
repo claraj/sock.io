@@ -14,18 +14,32 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.LinkedList;
 import java.util.Random;
 
 
-/** TODO restarting not working properly - can restart +1 snake with +1 +1 world + 1 set of dryers etc. clock ticking. Also remove message.
- * TODO Firebase - adversarial socks.
- * TODO adversarial tumble dryers.
- * TODO Dryers are getting stuck on the edge of the world. Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
- * TODO handle rotation, instance state, stopping stuff on close.
+/** TODO Firebase - adversarial socks.
+ *
+ *
+ * TODO Dryers can still get off the edge of the world? Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
+ * TODO handle rotation, instance state, stopping stuff on close. Everything needs to be re-centered on rotation.
+ *
+ * CODE IS MESSY! Utility method to check whether a point is within a circle, for example
  * TODO interface background, interface movesWithPlayer, has shift method
  * TODO int or float? Too many casts
+ * TODO app icon
+ *
+ *
+ * TODO FIREBASE
+ *
+ * Remove dryers. Only for no internet play.
+ * Specks can be are generated locally to each device.
+ * Every clock tick, get location & quantity of other socks, and draw on screen
+ * Locally work out collisions
+ * Send message to server with new location OR if have died.
+ * Check number of other socks to see if have won or not.
  * */
 
 public class SockActivity extends AppCompatActivity {
@@ -46,7 +60,7 @@ public class SockActivity extends AppCompatActivity {
 	private int dryerCount = 5;
 
 	private long period = 100;
-	private long maxDistanceMoved = 20;
+	private long maxDistanceMoved = 15;
 	private float angle = 1;
 	private float xMoveDist = 14f;
 	private float yMoveDist = 14f;
@@ -59,6 +73,7 @@ public class SockActivity extends AppCompatActivity {
 	private int worldRadius = 1500;
 
 	private float score = 0;
+	private boolean mLocal = true;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +84,12 @@ public class SockActivity extends AppCompatActivity {
 		mFrame = (FrameLayout) findViewById(R.id.fullscreen_content);
 		mGameOver = (TextView) findViewById(R.id.game_over_msg);
 
+		//Internet connection?
+		mLocal = !connectedToFirebase();
+
+		String gameTypeMessage = mLocal ? "No connection to server. Battle the dryers" : "Sock VS Sock";
+		Toast.makeText(this, gameTypeMessage, Toast.LENGTH_SHORT).show();
+
 		restartListener = new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -78,8 +99,12 @@ public class SockActivity extends AppCompatActivity {
 
 	}
 
-	private void restart() {
+	private boolean connectedToFirebase() {
+		//todo
+		return false;
+	}
 
+	private void restart() {
 
 		//reset score, remove message - //TODO doesn't go away?
 		score = 0;
@@ -93,7 +118,6 @@ public class SockActivity extends AppCompatActivity {
 		//remove old specks, sock, dryers, world...
 
 		mFrame.removeView(mSock);
-
 		if (mSpecks != null) {
 			for (SpeckView speck : mSpecks) {
 				mFrame.removeView(speck);
@@ -108,23 +132,25 @@ public class SockActivity extends AppCompatActivity {
 
 		mFrame.removeView(mWorld);
 
-		//Add tumble dryers
-		createLocalAdversaries();
+		mWorld = new WorldView(this, centerX, centerY, worldRadius);
+		mFrame.addView(mWorld);
 
 		//Create new specks...
 		makeSpecksAddToView();
 		//And new sock
+
+
 		mSock = new SockView(SockActivity.this, centerX, centerY);
 		mSock.addSegmentToEnd(centerX+10, centerY+10);
 		mSock.addSegmentToEnd(centerX+10, centerY+10);
-
-
 		mFrame.addView(mSock);
+
+		//Add tumble dryers
+		createLocalAdversaries();
+
 
 		//and add boundary
 
-		mWorld = new WorldView(this, centerX, centerY, worldRadius);
-		mFrame.addView(mWorld);
 
 		updateSock();   // go!
 		updateSpecks();
@@ -136,12 +162,34 @@ public class SockActivity extends AppCompatActivity {
 			@Override
 			public void run() {
 				Log.i(TAG, "TICK");
-				updateSock();
-				updateSpecks();
-				updateDryers();
-				if (!endGame()) {
-					handler.postDelayed(this, period); //run again!
+
+				if (mLocal) {
+
+					updateSock();
+					updateSpecks();
+					updateDryers();
+
+					if (!endLocalGame()) {
+						handler.postDelayed(this, period); //run again!
+					}
 				}
+
+				else {
+
+					getStateFromFirebase();
+					updateSock();
+					updateSpecks();
+					//updateDryers();
+					sendNewStateToFirebase();
+
+					if (!endFirebaseGame()) {
+						handler.postDelayed(this, period); //run again!
+					}
+
+				}
+
+
+
 			}
 		}, period);
 
@@ -204,6 +252,23 @@ public class SockActivity extends AppCompatActivity {
 				return true;
 			}
 		});
+	}
+
+	private void getStateFromFirebase() {
+		//TODO get locations of all other socks and their scores
+	}
+
+	private void sendNewStateToFirebase() {
+		//TODO where is this sock, and current score
+	}
+
+
+	private boolean endFirebaseGame() {
+
+		//TODO If all other socks dead OR we have died...
+
+		return false;
+
 	}
 
 	private void createLocalAdversaries() {
@@ -289,7 +354,7 @@ public class SockActivity extends AppCompatActivity {
 	}
 
 
-    private boolean endGame() {
+    private boolean endLocalGame() {
 
 		//Check various ways the game can end
 
