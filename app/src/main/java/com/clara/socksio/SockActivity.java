@@ -12,16 +12,24 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import java.util.LinkedList;
+import java.util.Random;
 
 
 /** TODO restarting not working properly - can restart +1 snake with +1 clock ticking. Also remove message.
- * TODO Boundaries!
+ * TODO Boundaries! TODO sock fall off world
  * TODO Firebase - adversarial socks.
- * TODO adversarial tumble dryers
- * TODO handle rotation
+ * TODO specks need to be distributed around world
+ * TODO adversarial tumble dryers.
+ * TODO Dryers are getting stuck on the edge of the world. Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
+ * TODO handle rotation, instance state, stopping stuff on close.
+ * TODO interface background, interface movesWithPlayer, has shift method
+ * TODO int or float? Too many casts
+ * TODO specks are not in the right place
+ * TODO end message should be on top of game widgets
  * */
 
 public class SockActivity extends AppCompatActivity {
@@ -36,8 +44,10 @@ public class SockActivity extends AppCompatActivity {
 	private SockView mSock;
 	private LinkedList<SpeckView> mSpecks;
 	private WorldView mWorld;
+	private LinkedList<DryerView> mDryers;
 
-	private int speckCount = 20;
+	private int speckCount = 200;
+	private int dryerCount = 5;
 
 	private long period = 100;
 	private long maxDistanceMoved = 20;
@@ -50,7 +60,7 @@ public class SockActivity extends AppCompatActivity {
 
 	private int centerX;
 	private int centerY;
-	private int worldRadius = 2000;
+	private int worldRadius = 500;
 
 	private float score = 0;
 
@@ -73,6 +83,9 @@ public class SockActivity extends AppCompatActivity {
 	}
 
 	private void restart() {
+
+		//Add tumble dryers
+		createLocalAdversaries();
 
 		//reset score, remove message
 		score = 0;
@@ -106,6 +119,7 @@ public class SockActivity extends AppCompatActivity {
 
 		updateSock();   // go!
 		updateSpecks();
+		updateDryers();  //adversaries
 
 		//** Stack overflow ftw http://stackoverflow.com/questions/10845172/android-running-a-method-periodically-using-postdelayed-call */
 		final Handler handler = new Handler();
@@ -115,6 +129,7 @@ public class SockActivity extends AppCompatActivity {
 				Log.i(TAG, "TICK");
 				updateSock();
 				updateSpecks();
+				updateDryers();
 				if (!endGame()) {
 					handler.postDelayed(this, period); //run again!
 				}
@@ -182,6 +197,56 @@ public class SockActivity extends AppCompatActivity {
 		});
 	}
 
+	private void createLocalAdversaries() {
+
+		//The specks put themselves in random places in a box.
+
+		mDryers = new LinkedList<>();
+
+		//Perhaps we want to decide where the dryers go?
+
+		Random rnd = new Random();
+
+		for (int d = 0 ; d < dryerCount ; d++) {
+
+			//How big is the world?
+
+			//Make random x, y TODO in circle
+
+			int x = (worldRadius - rnd.nextInt(worldRadius*2));
+			int y = (worldRadius - rnd.nextInt(worldRadius*2));
+
+			//Pythagoras!
+			while (x*x + y*y > worldRadius*worldRadius) {
+				 x = (worldRadius - rnd.nextInt(worldRadius*2));
+				 y = (worldRadius - rnd.nextInt(worldRadius*2));
+			}
+
+			x += centerX;   //And shift to center
+			y += centerY;
+
+			DryerView dryer = new DryerView(this, x, y);
+			mFrame.addView(dryer);
+			mDryers.add(dryer);
+
+		}
+
+		Log.i(TAG, "Dryers added : " + mDryers);
+	}
+
+	private void updateDryers() {
+		//Move randomly
+
+		for (DryerView dryer : mDryers) {
+			dryer.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
+			dryer.wander(centerX, centerY, worldRadius);
+			dryer.invalidate();
+		}
+
+		Log.i(TAG, "Dryers updated : " + mDryers);
+
+
+	}
 
 
 	private void makeSpecksAddToView() {
@@ -189,7 +254,7 @@ public class SockActivity extends AppCompatActivity {
 		mSpecks = new LinkedList<>();
 
 		for (int s = 0 ; s < speckCount ; s++) {
-			SpeckView speck = new SpeckView(this, maxX, maxY);
+			SpeckView speck = new SpeckView(this, centerX, centerY, worldRadius);
 			mSpecks.add(speck);
 			mFrame.addView(speck);
 		}
@@ -233,11 +298,15 @@ public class SockActivity extends AppCompatActivity {
 			return true;
 		}
 
-		//Sock leaves border?  TODO this does not work. Fixme.
 
-		Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY() + " world radius " + worldRadius) ;
+		int xdiff = Math.abs(mWorld.getCenterX() - (int) mSock.getHeadX());
+		int ydiff = Math.abs(mWorld.getCenterY() - (int) mSock.getHeadY());
 
-		if ( Math.abs(mWorld.getCenterX() - mSock.getHeadX()) > worldRadius && Math.abs( mWorld.getCenterY() - mSock.getHeadY() ) > worldRadius) {
+//				Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " xdiff = " + (mWorld.getCenterX() - mSock.getHeadX()) + " xdiff2 " + (xdiff*xdiff)
+//						+ " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY()  + "ydiff" + (mWorld.getCenterY() - mSock.getHeadY()) + " ydiff2 " + (ydiff*ydiff)
+//						+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
+
+		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
 			Log.i(TAG, "Sock leaves world");
 			mGameOver.setText("YOU FELL OFF THE WORLD, YOU LOSE\nSCORE = " + score);
 			return true;
@@ -256,9 +325,21 @@ public class SockActivity extends AppCompatActivity {
 
 		//TODO adversarial washing machines eat sock
 
+		if (dryerAteSock()) {
+			mGameOver.setText("THE DRYER GOT YOU\nSCORE=" +score );
+			return true;
+		}
+
 		Log.i(TAG, "game on");
 		return false;
     }
+
+	private boolean dryerAteSock() {
+
+		//TODO!!
+		return false;
+
+	}
 
 
 	private int eatSpecks() {
