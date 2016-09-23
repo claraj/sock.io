@@ -131,11 +131,12 @@ public class SockView extends View {
 		Log.i(TAG, "drawing " + x + " " + y);
 
 		int blue = 255, red=0;
-		for (Segment s : segments) {
-			red = (red+30) % 255;
-			blue = (blue+40) % 255;
 
-			mPaint.setARGB(255, red, 0, blue);
+		for (Segment s : segments) {
+			red = (red+20) % 255;
+			blue = (blue+15) % 255;
+
+			mPaint.setARGB(150, red, 0, blue);
 			canvas.drawCircle(s.x, s.y, mSize, mPaint);
 			//Log.i(TAG, "blue = " + blue);
 		}

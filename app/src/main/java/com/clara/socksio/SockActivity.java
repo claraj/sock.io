@@ -19,17 +19,13 @@ import java.util.LinkedList;
 import java.util.Random;
 
 
-/** TODO restarting not working properly - can restart +1 snake with +1 clock ticking. Also remove message.
- * TODO Boundaries! TODO sock fall off world
+/** TODO restarting not working properly - can restart +1 snake with +1 +1 world + 1 set of dryers etc. clock ticking. Also remove message.
  * TODO Firebase - adversarial socks.
- * TODO specks need to be distributed around world
  * TODO adversarial tumble dryers.
  * TODO Dryers are getting stuck on the edge of the world. Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
  * TODO handle rotation, instance state, stopping stuff on close.
  * TODO interface background, interface movesWithPlayer, has shift method
  * TODO int or float? Too many casts
- * TODO specks are not in the right place
- * TODO end message should be on top of game widgets
  * */
 
 public class SockActivity extends AppCompatActivity {
@@ -41,10 +37,10 @@ public class SockActivity extends AppCompatActivity {
 
 	private static String TAG = "SOCK ACTIVITY";
 
-	private SockView mSock;
-	private LinkedList<SpeckView> mSpecks;
-	private WorldView mWorld;
-	private LinkedList<DryerView> mDryers;
+	private static SockView mSock;
+	private static LinkedList<SpeckView> mSpecks;
+	private static WorldView mWorld;
+	private static LinkedList<DryerView> mDryers;
 
 	private int speckCount = 200;
 	private int dryerCount = 5;
@@ -60,7 +56,7 @@ public class SockActivity extends AppCompatActivity {
 
 	private int centerX;
 	private int centerY;
-	private int worldRadius = 500;
+	private int worldRadius = 1500;
 
 	private float score = 0;
 
@@ -84,17 +80,18 @@ public class SockActivity extends AppCompatActivity {
 
 	private void restart() {
 
-		//Add tumble dryers
-		createLocalAdversaries();
 
-		//reset score, remove message
+		//reset score, remove message - //TODO doesn't go away?
 		score = 0;
-		mGameOver.setVisibility(TextView.INVISIBLE);
+
+		mGameOver.setVisibility(View.INVISIBLE);   //fixme ?
+		mGameOver.setText("");  //hacky hack. why setVis not working?
 
 		//remove listener from TextView
 		mGameOver.setOnClickListener(null); // no more restarting!
 
-		//remove old specks
+		//remove old specks, sock, dryers, world...
+
 		mFrame.removeView(mSock);
 
 		if (mSpecks != null) {
@@ -103,12 +100,24 @@ public class SockActivity extends AppCompatActivity {
 			}
 		}
 
+		if (mDryers != null) {
+			for (DryerView dryer : mDryers) {
+				mFrame.removeView(dryer);
+			}
+		}
+
+		mFrame.removeView(mWorld);
+
+		//Add tumble dryers
+		createLocalAdversaries();
+
 		//Create new specks...
 		makeSpecksAddToView();
 		//And new sock
 		mSock = new SockView(SockActivity.this, centerX, centerY);
-		mSock.addSegmentToEnd(50, 50);
-		mSock.addSegmentToEnd(40, 40);
+		mSock.addSegmentToEnd(centerX+10, centerY+10);
+		mSock.addSegmentToEnd(centerX+10, centerY+10);
+
 
 		mFrame.addView(mSock);
 
@@ -140,21 +149,21 @@ public class SockActivity extends AppCompatActivity {
 			@Override
 			public boolean onTouch(View view, MotionEvent motionEvent) {
 
-				Log.i(TAG, "touch event");
+				//Log.i(TAG, "touch event");
 
-				Log.i(TAG, ""+ motionEvent.getActionMasked());
+				//Log.i(TAG, ""+ motionEvent.getActionMasked());
 
-				Log.i(TAG, "X EVENT = " + motionEvent.getX() + " Y EVENT = " + motionEvent.getY());
+				//Log.i(TAG, "X EVENT = " + motionEvent.getX() + " Y EVENT = " + motionEvent.getY());
 
 				switch (motionEvent.getActionMasked()) {
 
 					case MotionEvent.ACTION_DOWN:{
-						Log.i(TAG, "action down");
+						//Log.i(TAG, "action down");
 					}
 
 					case MotionEvent.ACTION_MOVE: {
 
-						Log.i(TAG, "action move");
+						//Log.i(TAG, "action move");
 
 						//tell Sock to move   todo - only if moved more than a little bit.
 
@@ -186,7 +195,7 @@ public class SockActivity extends AppCompatActivity {
 //						yMoveDist = -yMoveDist;
 
 
-						Log.w(TAG, "Angle in rads " + angle + " headX " + sockHeadX + " headY " + sockHeadY + " xtouch " + touchX + " y touch " + touchY + " xdelta " + xDelta + " ydelta " + yDelta + " xmovedist " + xMoveDist + " ymovedist " + yMoveDist);
+						//Log.w(TAG, "Angle in rads " + angle + " headX " + sockHeadX + " headY " + sockHeadY + " xtouch " + touchX + " y touch " + touchY + " xdelta " + xDelta + " ydelta " + yDelta + " xmovedist " + xMoveDist + " ymovedist " + yMoveDist);
 
 						break;
 					}
@@ -211,15 +220,15 @@ public class SockActivity extends AppCompatActivity {
 
 			//How big is the world?
 
-			//Make random x, y TODO in circle
+			int radWithMargin = worldRadius - 100;  //todo measure view bitmap
 
-			int x = (worldRadius - rnd.nextInt(worldRadius*2));
-			int y = (worldRadius - rnd.nextInt(worldRadius*2));
+			int x = (radWithMargin - rnd.nextInt(radWithMargin*2));
+			int y = (radWithMargin - rnd.nextInt(radWithMargin*2));
 
 			//Pythagoras!
-			while (x*x + y*y > worldRadius*worldRadius) {
-				 x = (worldRadius - rnd.nextInt(worldRadius*2));
-				 y = (worldRadius - rnd.nextInt(worldRadius*2));
+			while (x*x + y*y > radWithMargin*radWithMargin) {
+				 x = (radWithMargin - rnd.nextInt(radWithMargin*2));
+				 y = (radWithMargin - rnd.nextInt(radWithMargin*2));
 			}
 
 			x += centerX;   //And shift to center
@@ -231,7 +240,7 @@ public class SockActivity extends AppCompatActivity {
 
 		}
 
-		Log.i(TAG, "Dryers added : " + mDryers);
+		//Log.i(TAG, "Dryers added : " + mDryers);
 	}
 
 	private void updateDryers() {
@@ -258,7 +267,7 @@ public class SockActivity extends AppCompatActivity {
 			mSpecks.add(speck);
 			mFrame.addView(speck);
 		}
-		Log.i(TAG, "Added initial specks: " + mSpecks);
+		//Log.i(TAG, "Added initial specks: " + mSpecks);
 
 	}
 
@@ -287,15 +296,19 @@ public class SockActivity extends AppCompatActivity {
 	    //sock off screen? This isn't possible with the snake centered and background scrolling.
 
 		mGameOver.setVisibility(TextView.VISIBLE);
+		mGameOver.bringToFront();
 		mGameOver.setOnClickListener(restartListener);
+
+		String gameOverText = "";
+		boolean gameOver = false;
 
 		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
 			Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
 
 			Log.i(TAG, "hit wall");
 
-			mGameOver.setText("YOU HIT THE WALL, YOU LOSE\nSCORE = " + score);
-			return true;
+			gameOverText = "YOU HIT THE WALL, YOU LOSE";
+			gameOver = true;
 		}
 
 
@@ -308,8 +321,9 @@ public class SockActivity extends AppCompatActivity {
 
 		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
 			Log.i(TAG, "Sock leaves world");
-			mGameOver.setText("YOU FELL OFF THE WORLD, YOU LOSE\nSCORE = " + score);
-			return true;
+			gameOverText = "YOU FELL OFF THE WORLD";
+			gameOver = true;
+
 		}
 
 
@@ -317,29 +331,37 @@ public class SockActivity extends AppCompatActivity {
 		if (mSpecks.size() == 0) {
 			//all specks eaten
 
-			mGameOver.setText("ATE ALL THE SPECKS\n SCORE = " + score);
+			gameOverText = "ATE ALL THE SPECKS!!";
 			Log.i(TAG, "eaten all specks");
-			return true;
+			gameOver = true;
+
 		}
 
 
 		//TODO adversarial washing machines eat sock
 
-		if (dryerAteSock()) {
-			mGameOver.setText("THE DRYER GOT YOU\nSCORE=" +score );
-			return true;
+		if (eatenByDryer()) {
+			gameOverText = "THE DRYER GOT YOU";
+			gameOver = true;
+
 		}
 
-		Log.i(TAG, "game on");
-		return false;
+		if (gameOver) {
+			gameOverText += "\n" ;
+			gameOverText += "SCORE = " + (int) score;
+			gameOverText += "\n" ;
+			gameOverText += "* tap to replay *";
+			mGameOver.setVisibility(View.VISIBLE);
+			mGameOver.bringToFront();
+			mGameOver.setText(gameOverText);
+		}
+
+		else {
+			Log.i(TAG, "game on");
+		}
+
+		return gameOver;
     }
-
-	private boolean dryerAteSock() {
-
-		//TODO!!
-		return false;
-
-	}
 
 
 	private int eatSpecks() {
@@ -383,6 +405,19 @@ public class SockActivity extends AppCompatActivity {
 
 	}
 
+	private boolean eatenByDryer() {
+
+		for (DryerView dryer : mDryers) {
+			if (intersects(dryer, mSock)) {
+
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
 
 	private boolean intersects(SpeckView speck, SockView sock) {
 
@@ -392,6 +427,45 @@ public class SockActivity extends AppCompatActivity {
 		int ydif = Math.abs((int)sock.getHeadY() - speck.y);
 
 		if (xdif < intersect && ydif < intersect) {
+			return true;
+		}
+
+		return  false;
+	}
+
+
+	private boolean intersects(DryerView dryer, SockView sock) {
+
+		int intersect = sock.getSize();  //RADIUS of sock head
+
+		int sockHeadX = (int)sock.getHeadX();
+		int sockHeadY = (int)sock.getHeadY();
+
+		float dryerHeight = dryer.height();
+		//float dryerMHeight = dryer.getMeasuredHeight();
+
+		float dryerWidth = dryer.width();
+		//float dryerMWidth = dryer.getMeasuredWidth();
+
+		float dryerTopX = dryer.x();
+		float dryerEndX = dryerTopX + dryerWidth;
+		float dryerTopY = dryer.y();
+		float dryerEndY = dryerTopY + dryerHeight;
+
+		Log.i(TAG, sockHeadX + " "
+				+ sockHeadY + " "
+				+ dryerTopX  + " "
+				+  dryerTopX  + " " +
+				dryerHeight  + " " +
+				 dryerWidth
+						+ " " +
+						dryerEndX  + " " +
+						dryerEndY
+				 );
+
+		if (sockHeadX > dryerTopX && sockHeadX < dryerEndX &&
+				sockHeadY > dryerTopY && sockHeadY < dryerEndY) {
+			Log.i(TAG, "dryer-sock collision");
 			return true;
 		}
 
@@ -414,7 +488,7 @@ public class SockActivity extends AppCompatActivity {
 
 			//Move sock by adding a new segment and removing last
 
-			Log.i(TAG, "update sock");
+			//Log.i(TAG, "update sock");
 
 			mSock.addSegmentRelativeToHead(xMoveDist, yMoveDist);
 
@@ -426,7 +500,7 @@ public class SockActivity extends AppCompatActivity {
 
 			mSock.invalidate();
 
-			Log.i(TAG, mSock.toString());
+			//Log.i(TAG, mSock.toString());
 
 		}
 

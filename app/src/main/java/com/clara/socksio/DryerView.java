@@ -18,11 +18,34 @@ import java.util.Random;
 public class DryerView extends View {
 
 
+
 	public void setX(int x) {
 		this.x = x;
 	}
 	public void setY(int y) {
 		this.y = y;
+	}
+
+
+
+	private int height;
+	private int width;
+
+	public int height() {
+		return height;
+	}
+
+	public int width() {
+		return width;
+	}
+
+
+	public int x() {
+		return x;
+	}
+
+	public int y() {
+		return y;
 	}
 
 	private int x;
@@ -42,6 +65,8 @@ public class DryerView extends View {
 		Drawable dryer = getResources().getDrawable(R.drawable.evildryer);   //new version requires theme argument, which can be null.
 		dryerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.evildryer);
 
+		height = dryer.getIntrinsicHeight();
+		width = dryer.getIntrinsicWidth();
 	}
 
 	public void shift(int xdif, int ydif) {
@@ -57,21 +82,26 @@ public class DryerView extends View {
 		Random rnd = new Random();
 		int distance = rnd.nextInt(MAX_MOVE);
 
-		x = x + (int)( Math.sin(prevailingDirection) * distance);
-		y = y + (int)( Math.cos(prevailingDirection) * distance);
+		int tempX = x + (int)( Math.sin(prevailingDirection) * distance);
+		int tempY = y + (int)( Math.cos(prevailingDirection) * distance);
 
 		prevailingDirection = prevailingDirection + (rnd.nextFloat() / 2);  //move just a little, between 0 and 0.5 rads ~ 12th of a circle
 
 		//If hit edge, reverse by adding Pi to prevailing direction
 
-		int xdiff = worldCenterX - x;
-		int ydiff = worldCenterY - y;
+		int xdiff = worldCenterX - tempX;
+		int ydiff = worldCenterY - tempY;
 
 		//Does this fall off the world?
 		if ( xdiff*xdiff + ydiff*ydiff > radius*radius) {
 
 			prevailingDirection = (prevailingDirection + (float)Math.PI)  % ((float) Math.PI);
+			//don't modify x or y
+		}
 
+		else {
+			x = tempX;
+			y = tempY;
 		}
 
 	}
