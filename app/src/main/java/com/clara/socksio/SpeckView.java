@@ -17,7 +17,7 @@ import static android.content.ContentValues.TAG;
 
 class SpeckView extends View {
 
-	//Random speck location
+	//Draw at random location
 
 	private int size = 10;
 
@@ -30,7 +30,6 @@ class SpeckView extends View {
 
 	public SpeckView(Context context, float centerX, float centerY, int radius) {
 		super(context);
-
 
 		radius = radius - size;  //create a margin
 		Random rnd = new Random();
@@ -49,11 +48,15 @@ class SpeckView extends View {
 		y += centerY;
 
 		mPaint = new Paint();
+		mPaint.setStyle(Paint.Style.FILL);
+		mPaint.setARGB(170, 255, 255, 255);  //white, slightly transparent
 
-		FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size);
 
-		params.leftMargin = x;
-		params.topMargin = y;
+
+		//		//TODO does this do anything?
+//		FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size);
+//		params.leftMargin = x;
+//		params.topMargin = y;
 
 	}
 
@@ -64,10 +67,7 @@ class SpeckView extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		mPaint.setStyle(Paint.Style.FILL);
-		mPaint.setARGB(170, 255, 255, 255);  //white transparent
 		canvas.drawCircle(x, y, size, mPaint);
-
 	}
 
 	@Override

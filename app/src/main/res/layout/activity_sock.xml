@@ -39,7 +39,7 @@
         android:textStyle="bold"
         android:background="#FF0000"
         android:textSize="@dimen/game_over"
-        android:text="You shouldn't see this. "
+        android:text="CONTACTING SERVER... "
         android:layout_gravity="center_vertical|center_horizontal"
        />
 

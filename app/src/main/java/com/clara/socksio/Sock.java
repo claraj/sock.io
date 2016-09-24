@@ -1,6 +1,6 @@
 package com.clara.socksio;
 
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Created by admin on 9/23/16.
@@ -8,20 +8,60 @@ import java.util.List;
 
 public class Sock {
 
-	List<SockView.Segment> segments;
+	ArrayList<SockView.Segment> segments;
 
-	public List<SockView.Segment> getSegments() {
+	int worldCenterX;
+	int worldCenterY;
+
+	public int getWorldCenterY() {
+		return worldCenterY;
+	}
+
+	public void setWorldCenterY(int worldCenterY) {
+		this.worldCenterY = worldCenterY;
+	}
+
+	public int getWorldCenterX() {
+		return worldCenterX;
+	}
+
+	public void setWorldCenterX(int worldCenterX) {
+		this.worldCenterX = worldCenterX;
+	}
+
+
+	public Sock() {}  //empty constructor needed?
+
+	public ArrayList<SockView.Segment> getSegments() {
 		return segments;
 	}
 
-	public void setSegments(List<SockView.Segment> segments) {
+	public void setSegments(ArrayList<SockView.Segment> segments) {
 		this.segments = segments;
 	}
 
 
-	public Sock(List<SockView.Segment> segments) {
+	public Sock(ArrayList<SockView.Segment> segments, int worldCenterX, int worldCenterY) {
 		this.segments = segments;
+		this.worldCenterX = worldCenterX;
+		this.worldCenterY = worldCenterY;
 
+
+	}
+
+	public boolean isThatUs(Sock otherSock) {
+
+		return this.segments.equals(otherSock.segments);
+	}
+
+	@Override
+	public String toString(){
+
+		if (segments == null) {
+			return "Sock with no segments";
+		} else {
+			return "A sock with segments: " + segments.toString() + " World center x " + worldCenterX + " , y "  + worldCenterY;
+		}
 	}
 
 }
