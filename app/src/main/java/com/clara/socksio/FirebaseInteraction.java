@@ -180,7 +180,15 @@ public class FirebaseInteraction {
 
 	void removeSelfFromFirebase() {
 		//TODO
-		mSockDatabaseRef.child(sockKey).removeValue();
+
+		Log.d(TAG, "ref " + mSockDatabaseRef);
+
+		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey);
+
+		ref.removeValue();
+
+		Log.d(TAG, "removing sock for key " + sockKey);
+
 	}
 
 

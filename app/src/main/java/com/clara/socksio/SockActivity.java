@@ -1,41 +1,22 @@
 package com.clara.socksio;
 
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v7.appcompat.*;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
-
-import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 
 
-/** TODO Firebase - adversarial socks.
+/**
  *
  *
  * TODO Dryers can still get off the edge of the world? Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
@@ -46,16 +27,23 @@ import java.util.Random;
  * TODO int or float? Too many casts
  * TODO app icon
  *
- * TODO is a new SockView being created every tick? (?) Drawing is not working.
+ * TODO is a new SockView - and list of enemy SockViews - being created every tick? (?) Drawing is not working.
+ *
+ * TODO other forms of animation. Would something else be appropriate?
  *
  *
  * TODO FIREBASE
  *
+ * todo sync the local data with firebase data more efficiently. Should not create new SockViews every tick. Should update existing sockviews.
+ *
  * todo deal correctly with no data connection
+ * Startup needs work. First test if connection is available. If so, offer local vs. server play
+ * (Should also handle loss of connection in the middle of game)
  * todo deal correctly with no other players available, fall back to no data connection
- * todo delete sock on death
+ * todo delete sock on death (ok) but make sure restart sock has default length
  *
  * todo identify collisions (sorta working? TEST)
+ * todo dryer deathmatch. Any part of dryer touch sock = death.
  *
  * Remove dryers. Only for no internet play.
  * Specks can be are generated locally to each device.
@@ -63,7 +51,7 @@ import java.util.Random;
  * Every clock tick, get location & quantity of other socks, and draw on screen
  * A sock needs a score; a list of segment x-y locations, segment size
  * Locally work out collisions
- * Game number for dividing socks into possible +1 game
+ * TODO Game number for dividing socks into possible +1 game
  * Send message to server with new location OR if have died.
  * Check number of other socks to see if have won or not.
  *
@@ -241,6 +229,8 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 			//Add enemy socks, otherwise
 			updateEnemySocks();
 		}
+
+		mSock.bringToFront();
 
 		//** Stack overflow ftw http://stackoverflow.com/questions/10845172/android-running-a-method-periodically-using-postdelayed-call */
 		final Handler handler = new Handler();
@@ -575,7 +565,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//Check various ways the game can end
 
-	    //sock off screen? This isn't possible with the snake centered and background scrolling.
+	    //sock off screen? This isn't possible with the sock centered and background scrolling.
 
 		mGameOver.setVisibility(TextView.VISIBLE);
 		mGameOver.bringToFront();

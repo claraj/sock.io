@@ -18,16 +18,6 @@ public class SockView extends View {
 
 	private static String TAG = "SOCKVIEW";
 
-	public boolean isLocal() {
-		return local;
-	}
-
-	public void setLocal(boolean local) {
-		this.local = local;
-	}
-
-	private boolean local = true;
-
 	private int centerX;
 	private int centerY;
 
@@ -101,12 +91,10 @@ public class SockView extends View {
 	//Shift all segments
 	public void shift(int x, int y) {
 
-		//if (segments!=null) {    //todo why is fb returning empty socks?
+		for (Segment s : segments) {
+			s.shift(x, y);
+		}
 
-			for (Segment s : segments) {
-				s.shift(x, y);
-			}
-		//}
 	}
 
 
