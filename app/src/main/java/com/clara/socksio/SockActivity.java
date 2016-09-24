@@ -48,6 +48,8 @@ import java.util.Random;
  *
  * TODO FIREBASE
  *
+ * todo deal correctly with no data connection
+ *
  * Remove dryers. Only for no internet play.
  * Specks can be are generated locally to each device.
  * Generate unique ID for this sock
@@ -371,7 +373,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 				Log.i(TAG, "Enemy sock world center is (2)" + enemySock.getWorldCenterX() + " " + enemySock.getWorldCenterY());
 
-				enemySockView.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
+				//enemySockView.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
 
 
 				Log.i(TAG, "Enemy sock after shift: " + enemySockView);
