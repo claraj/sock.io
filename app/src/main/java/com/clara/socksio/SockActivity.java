@@ -7,6 +7,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.appcompat.*;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,6 +25,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+
+import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,6 +52,10 @@ import java.util.Random;
  * TODO FIREBASE
  *
  * todo deal correctly with no data connection
+ * todo deal correctly with no other players available, fall back to no data connection
+ * todo delete sock on death
+ *
+ * todo identify collisions (sorta working? TEST)
  *
  * Remove dryers. Only for no internet play.
  * Specks can be are generated locally to each device.
@@ -371,13 +378,26 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 				enemySockView.shift(enemySock.getWorldCenterX(), enemySock.getWorldCenterY());   //TODO got to shift relative to world center??
 
-				Log.i(TAG, "Enemy sock world center is (2)" + enemySock.getWorldCenterX() + " " + enemySock.getWorldCenterY());
 
-				//enemySockView.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
+				//BuildConfig.DEBUG
 
 
-				Log.i(TAG, "Enemy sock after shift: " + enemySockView);
-				//.invalidate();
+				int playerXdiff =  -mWorld.getCenterX();
+				int playerYdiff =  -mWorld.getCenterY();
+
+				Log.i(TAG, "World, player sock: x" + mSock.worldCenterX + " y " + mSock.worldCenterY + " w x " + mWorld.getCenterX() + " w y " + mWorld.getCenterY());
+
+				Log.i(TAG, "Enemy Sock View after shift 1 : " + enemySockView);
+
+
+
+				enemySockView.shift( playerXdiff, playerYdiff ); //keep on screen  (?)
+
+
+				Log.i(TAG, "Enemy sock after shift 2 : " + enemySockView);
+
+				//Assert.fail("Enemy socks need to update correctly");
+
 				//The coordinates in this sock's segments are going to start at world center. So a sock needs to store the center offset.
 
 				mFrame.addView(enemySockView);
@@ -423,6 +443,14 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 			Log.i(TAG, "ENEMY SOCK LIST IS NULL");
 		}
 
+		if (collidedWithEnemySock()) {
+
+			gameOver = true;
+			gameOverText = "YOU WERE DESTROYED BY OTHER SOCK";
+			Log.i(TAG, "destroyed by other sock");
+		}
+
+
 		/* Fell off world? */
 
 		int xdiff = Math.abs(mWorld.getCenterX() - (int) mSock.getHeadX());
@@ -453,6 +481,30 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		return gameOver;
 
 	}
+
+	private boolean collidedWithEnemySock() {
+
+		//Consult
+
+		for (SockView enemySockView : enemySockViews) {
+
+			//Check all segments
+
+			for (SockView.Segment s : enemySockView.segments)  {
+
+				if (intersects(s, mSock)) {
+					return true;
+				}
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+
 
 	private void createLocalAdversaries() {
 
@@ -644,6 +696,23 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		}
 
 		return false;
+
+	}
+
+	private boolean intersects(SockView.Segment s, SockView sock) {
+
+		int intersect = sock.getSize();
+
+		int xdif = Math.abs((int)sock.getHeadX() - (int)s.x);
+		int ydif = Math.abs((int)sock.getHeadY() - (int)s.y);
+
+		if (xdif < intersect && ydif < intersect) {
+			return true;
+		}
+
+		return  false;
+
+
 
 	}
 
