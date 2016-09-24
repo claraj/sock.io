@@ -38,9 +38,9 @@ class SpeckView extends View {
 		x = radius - rnd.nextInt(radius*2);
 		y = radius - rnd.nextInt(radius*2);
 
-		Log.i(TAG, "x " + x + " y " + y + " radius " + radius);
+		//Log.i(TAG, "x " + x + " y " + y + " radius " + radius);
 		while (x*x + y*y > radius*radius) {
-			Log.i(TAG, "Outside circle. recalc x " + x + " y " + y + " radius " + radius);
+			//Log.i(TAG, "Outside circle. recalc x " + x + " y " + y + " radius " + radius);
 			x = radius - rnd.nextInt(radius*2);
 			y = radius - rnd.nextInt(radius*2);
 		}

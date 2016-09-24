@@ -16,6 +16,10 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -36,10 +40,15 @@ import java.util.Random;
  *
  * Remove dryers. Only for no internet play.
  * Specks can be are generated locally to each device.
+ * Generate unique ID for this sock
  * Every clock tick, get location & quantity of other socks, and draw on screen
+ * A sock needs a score; a list of segment x-y locations, segment size
  * Locally work out collisions
+ * Game number for dividing socks into possible +1 game
  * Send message to server with new location OR if have died.
  * Check number of other socks to see if have won or not.
+ *
+ * Major config issues - how to clear data from DB? e.g. if apps crash or idle?
  * */
 
 public class SockActivity extends AppCompatActivity {
@@ -75,6 +84,8 @@ public class SockActivity extends AppCompatActivity {
 	private float score = 0;
 	private boolean mLocal = true;
 
+	private DatabaseReference mSockDatabase;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -100,8 +111,23 @@ public class SockActivity extends AppCompatActivity {
 	}
 
 	private boolean connectedToFirebase() {
-		//todo
-		return false;
+
+		try {
+			FirebaseAuth fbauth = FirebaseAuth.getInstance();
+
+			Log.i("TAG", " current user : " + fbauth.getCurrentUser());
+
+			FirebaseDatabase database = FirebaseDatabase.getInstance();
+
+			Log.i(TAG, " database : " + database);
+
+			DatabaseReference sockDatabase = database.getReference();
+
+			return true;
+		} catch (Exception e) {
+			Log.e(TAG, "NOT CONNECTED ", e);
+			return false; //todo presumably something will break if no connection. probably some more checks!
+		}
 	}
 
 	private void restart() {
@@ -256,16 +282,22 @@ public class SockActivity extends AppCompatActivity {
 
 	private void getStateFromFirebase() {
 		//TODO get locations of all other socks and their scores
+
+		mSockDatabase.push().setValue(mSock.getSock());   //I have no idea what i'm doing
+		//seems we need a callback to identify when connected.
 	}
 
 	private void sendNewStateToFirebase() {
 		//TODO where is this sock, and current score
+		//Should be able to configure listener for data changed.
 	}
 
 
 	private boolean endFirebaseGame() {
 
 		//TODO If all other socks dead OR we have died...
+
+		mSockDatabase.removeValue();  //remove self.
 
 		return false;
 
@@ -317,7 +349,7 @@ public class SockActivity extends AppCompatActivity {
 			dryer.invalidate();
 		}
 
-		Log.i(TAG, "Dryers updated : " + mDryers);
+		//Log.i(TAG, "Dryers updated : " + mDryers);
 
 
 	}
@@ -341,7 +373,7 @@ public class SockActivity extends AppCompatActivity {
 	public void onWindowFocusChanged(boolean hasFocus) {
 
 		//Mostly figuring out what size the screen is
-		Log.i(TAG, mFrame.getMeasuredHeight() + " " + mFrame.getMeasuredWidth());
+		//Log.i(TAG, mFrame.getMeasuredHeight() + " " + mFrame.getMeasuredWidth());
 
 		maxX = mFrame.getWidth();
 		maxY = mFrame.getHeight();
@@ -368,9 +400,9 @@ public class SockActivity extends AppCompatActivity {
 		boolean gameOver = false;
 
 		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
-			Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
+			//Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
 
-			Log.i(TAG, "hit wall");
+			//Log.i(TAG, "hit wall");
 
 			gameOverText = "YOU HIT THE WALL, YOU LOSE";
 			gameOver = true;
@@ -445,12 +477,12 @@ public class SockActivity extends AppCompatActivity {
 				//speck.invalidate(); //?
 				score++;
 				specksEaten++;
-				Log.i(TAG, "Eaten speck, score is " + score);
+				//Log.i(TAG, "Eaten speck, score is " + score);
 				speck.eaten = true;   //flag speck for removal
 			}
 		}
 
-		Log.i(TAG, "Checking and removing specks. " + mSpecks);
+		//Log.i(TAG, "Checking and removing specks. " + mSpecks);
 
 		//TODO a better way? Filtering the list.
 
@@ -463,7 +495,7 @@ public class SockActivity extends AppCompatActivity {
 
 		mSpecks = temp;
 
-		Log.i(TAG, "Cleared eaten specks. " + mSpecks);
+		//Log.i(TAG, "Cleared eaten specks. " + mSpecks);
 
 
 		return specksEaten;
@@ -517,20 +549,20 @@ public class SockActivity extends AppCompatActivity {
 		float dryerTopY = dryer.y();
 		float dryerEndY = dryerTopY + dryerHeight;
 
-		Log.i(TAG, sockHeadX + " "
-				+ sockHeadY + " "
-				+ dryerTopX  + " "
-				+  dryerTopX  + " " +
-				dryerHeight  + " " +
-				 dryerWidth
-						+ " " +
-						dryerEndX  + " " +
-						dryerEndY
-				 );
+//		Log.i(TAG, sockHeadX + " "
+//				+ sockHeadY + " "
+//				+ dryerTopX  + " "
+//				+  dryerTopX  + " " +
+//				dryerHeight  + " " +
+//				 dryerWidth
+//						+ " " +
+//						dryerEndX  + " " +
+//						dryerEndY
+//				 );
 
 		if (sockHeadX > dryerTopX && sockHeadX < dryerEndX &&
 				sockHeadY > dryerTopY && sockHeadY < dryerEndY) {
-			Log.i(TAG, "dryer-sock collision");
+			//Log.i(TAG, "dryer-sock collision");
 			return true;
 		}
 

@@ -38,7 +38,12 @@ public class SockView extends View {
 
 	//List of segments central co-ordinates
 
-	private class Segment {
+	public Sock getSock(){
+		return new Sock(segments);
+	}
+
+
+	class Segment {
 		float x;
 		float y;
 
@@ -98,7 +103,7 @@ public class SockView extends View {
 	//Add to end of segments (?)
 	public void addSegmentToEnd(float x, float y) {
 		segments.add(new Segment(x, y));         //add to end
-		Log.d(TAG, "Added segment to end " + +x + " " + y +  " " + segments);
+		//Log.d(TAG, "Added segment to end " + +x + " " + y +  " " + segments);
 	}
 
 //	//Add to start of segments (?)
