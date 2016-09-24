@@ -80,7 +80,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	private int speckCount = 200;
 	private int dryerCount = 5;
 
-	private long period = 100;
+	private long period = 1000;
 	private long maxDistanceMoved = 15;
 	private float angle = 1;
 	private float xMoveDist = 14f;    //Amount moved in last clock tick
@@ -113,14 +113,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		mFirebase = new FirebaseInteraction(this);
 		mLocal = !mFirebase.connectedToFirebase();
 
-		//And new sock
-		mSock = new SockView(SockActivity.this, centerX, centerY);
-		mSock.addSegmentToEnd(centerX+10, centerY+10);
-		mSock.addSegmentToEnd(centerX+10, centerY+10);
-		mFrame.addView(mSock);
 
-		mFirebase.setSock(mSock.getSock());
-		mFirebase.getDataAboutOtherSocks();
 
 
 		String gameTypeMessage = mLocal ? "No connection to server. Battle the dryers" : "Sock VS Sock";
@@ -145,6 +138,15 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		centerX = (int) maxX / 2;
 		centerY = (int) maxY / 2;
+
+		//And new sock
+		mSock = new SockView(SockActivity.this, centerX, centerY);
+		mSock.addSegmentToEnd(centerX+10, centerY+10);
+		mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
+		mFrame.addView(mSock);
+
+		mFirebase.setSock(mSock.getSock());
+		mFirebase.getDataAboutOtherSocks();
 
 		//And start game.
 		if (mLocal) {

@@ -11,10 +11,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
 
 
 public class FirebaseInteraction {
@@ -36,7 +33,7 @@ public class FirebaseInteraction {
 
 	private ServerDataReadyListener dataReadyListener;
 
-	private final String CHILD_KEY = "all_socks";
+	private final String ALL_SOCKS_KEY = "all_socks";
 
 	public FirebaseInteraction(ServerDataReadyListener listener) {
 
@@ -49,7 +46,7 @@ public class FirebaseInteraction {
 
 		mEnemySocks = new HashMap<>();
 
-		Log.i(TAG, "push sock?" + mSock);
+		//Log.i(TAG, "push sock?" + mSock);
 
 		//Make a query, and give it a listener
 
@@ -64,12 +61,13 @@ public class FirebaseInteraction {
 
 
 	public void getDataAboutOtherSocks() {
+
 		mSockChildListener = new ChildEventListener() {
 			@Override
 			public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 				//deal with data here
-				//new sock joined game
-				Log.i(TAG, "Child added keys is " + s + " value is " + dataSnapshot.getValue());
+				//new sock joined game (?)
+				Log.i(TAG, "Child added key is " + s + " value is " + dataSnapshot.getValue());
 			}
 
 			@Override
@@ -99,11 +97,13 @@ public class FirebaseInteraction {
 
 			}
 		};
-		Query allOtherSnakes = mSockDatabaseRef.child(CHILD_KEY);
-		allOtherSnakes.addChildEventListener(mSockChildListener);
 
 
-		Query allOtherSnakesData = mSockDatabaseRef.child(CHILD_KEY);
+		//Query allOtherSnakes = mSockDatabaseRef.child(ALL_SOCKS_KEY);
+		//allOtherSnakes.addChildEventListener(mSockChildListener);       //do we need?
+
+
+		Query allOtherSnakesData = mSockDatabaseRef.child(ALL_SOCKS_KEY);
 
 		allOtherSnakesData.addValueEventListener(new ValueEventListener() {
 			@Override
@@ -111,31 +111,31 @@ public class FirebaseInteraction {
 
 				Log.i(TAG, "value event " + dataSnapshot);
 
-				//Got other socks from the DB.
-
 				if (mEnemySocks == null) {
 					mEnemySocks = new HashMap<String, Sock>();
 				}
 
 				//mEnemySocks.add(dataSnapshot.getValue(Sock.class));
 
+				long children = dataSnapshot.getChildrenCount();
+
+//				for (long child = 0 ; 0 < children ; child++ ) {
 				for (DataSnapshot ds : dataSnapshot.getChildren()) {
 
-					Log.i(TAG, "data   " + ds);
-					//mEnemySocks.add(ds.getValue(Sock.class));
-					//TODO ignore this sock by key
+					Log.i(TAG, "DataSnapshot, child of " + ALL_SOCKS_KEY + ": "  + ds);
 
 					Sock enemy = ds.getValue(Sock.class);   //move into if statement
 					String enemyKey = ds.getKey();
 
 					if (enemyKey.equals(sockKey)){
 						mEnemySocks.put(enemyKey, enemy);
-						Log.i(TAG, "Enemy: " + enemy);
+						Log.i(TAG, "Adding/updating enemy in enemy sock list: " + enemy);
 
 					} else {
-						Log.i(TAG, "not adding self " + enemy);
+						Log.i(TAG, "(not adding self): " + enemy);
 					}
 
+				//TODO remove dead socks
 
 				}
 
@@ -163,12 +163,12 @@ public class FirebaseInteraction {
 	public void setSock(Sock sock) {
 		mSock = sock;
 
-		DatabaseReference ref = mSockDatabaseRef.child(CHILD_KEY).push();
+		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).push();
 		String key = ref.getKey();
-		ref.push().setValue(sock);   //add new sock.
+		ref.setValue(sock);   //add new sock.
 
 		sockKey = key;
-		Log.i(TAG, "Set/add sock result from fb = " + key + " " + sock);
+		Log.i(TAG, "Set/add sock result from fb = " + sockKey + " " + sock);
 
 	}
 
@@ -190,7 +190,7 @@ public class FirebaseInteraction {
 
 		 Log.i(TAG, "send new state to firebase " + sock);
 
-		mSockDatabaseRef.child(CHILD_KEY).child(sockKey).setValue(sock);   //todo  need to update ??
+		mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey).setValue(sock);   //todo  need to update ??
 
 	}
 
