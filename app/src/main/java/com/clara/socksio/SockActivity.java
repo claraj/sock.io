@@ -25,6 +25,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +43,7 @@ import java.util.Random;
  * TODO int or float? Too many casts
  * TODO app icon
  *
- * TODO is a new SockView being created every tick?
+ * TODO is a new SockView being created every tick? (?) Drawing is not working.
  *
  *
  * TODO FIREBASE
@@ -80,7 +81,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	private int speckCount = 200;
 	private int dryerCount = 5;
 
-	private long period = 1000;
+	private long period = 150;
 	private long maxDistanceMoved = 15;
 	private float angle = 1;
 	private float xMoveDist = 14f;    //Amount moved in last clock tick
@@ -99,6 +100,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	FirebaseInteraction mFirebase;
 
 	private HashMap<String, Sock> enemySocks;
+	private ArrayList<SockView> enemySockViews;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -140,6 +142,8 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		centerY = (int) maxY / 2;
 
 		//And new sock
+
+		if (mSock != null) { mFrame.removeView(mSock); }
 		mSock = new SockView(SockActivity.this, centerX, centerY);
 		mSock.addSegmentToEnd(centerX+10, centerY+10);
 		mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
@@ -179,7 +183,8 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//remove old specks, sock, enemy socks, dryers, world...
 
-		mFrame.removeView(mSock);
+		//mFrame.removeView(mSock);   //deal with sock elsewhere
+
 		if (mSpecks != null) {
 			for (SpeckView speck : mSpecks) {
 				mFrame.removeView(speck);
@@ -337,22 +342,46 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		enemySocks = mFirebase.getEnemySocks();
 
+
+		if (enemySockViews != null) {
+			for (SockView sock : enemySockViews) {
+				mFrame.removeView(sock);
+			}
+		}
+
+		enemySockViews = new ArrayList<>();
+
+
 		if (mFirebase.getEnemySocks() != null) {
+			Log.i(TAG, "There are currently this many enemies" + enemySocks.size());
 
 			for (String enemySockKey : enemySocks.keySet()) {
 
 				Sock enemySock = enemySocks.get(enemySockKey);
-				Log.i(TAG, "Enemy: " + enemySockKey.toString() + " sock: "  + enemySock);
 
-				SockView sockView = new SockView(this, enemySock);
+				Log.i(TAG, "Enemy Sock: " + enemySockKey + " sock: "  + enemySock);
 
-				sockView.shift(enemySock.getWorldCenterX(), enemySock.getWorldCenterY());   //got to shift relative to world center??
+				Log.i(TAG, "Enemy sock world center is (1) " + enemySock.getWorldCenterX() + " " + enemySock.getWorldCenterY());
+
+				SockView enemySockView = new SockView(this, enemySock);
+
+				Log.i(TAG, "Enemy Sock View: " + enemySockView);
+
+				enemySockView.shift(enemySock.getWorldCenterX(), enemySock.getWorldCenterY());   //TODO got to shift relative to world center??
+
+				Log.i(TAG, "Enemy sock world center is (2)" + enemySock.getWorldCenterX() + " " + enemySock.getWorldCenterY());
+
+				enemySockView.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
 
 
+				Log.i(TAG, "Enemy sock after shift: " + enemySockView);
+				//.invalidate();
 				//The coordinates in this sock's segments are going to start at world center. So a sock needs to store the center offset.
 
-				mFrame.addView(sockView);
-				 //todo update more efficiently
+				mFrame.addView(enemySockView);
+				enemySockViews.add(enemySockView);
+
+				 //todo update more efficiently. Making a new View for each sock is not very efficient.
 
 			}
 		}
@@ -684,10 +713,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 			//Move sock by adding a new segment and removing last
 
-			//Log.i(TAG, "update sock");
-
 			mSock.addSegmentRelativeToHead(xMoveDist, yMoveDist);
-
 
 			int specksEaten = eatSpecks();
 
@@ -700,7 +726,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 			mSock.invalidate();
 
-			//Log.i(TAG, mSock.toString());
+		Log.i(TAG, "updated sock, " + mSock);
+
+		//Log.i(TAG, mSock.toString());
 
 		}
 

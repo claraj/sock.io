@@ -111,6 +111,7 @@ public class FirebaseInteraction {
 
 				Log.i(TAG, "value event " + dataSnapshot);
 
+
 				if (mEnemySocks == null) {
 					mEnemySocks = new HashMap<String, Sock>();
 				}
@@ -122,17 +123,17 @@ public class FirebaseInteraction {
 //				for (long child = 0 ; 0 < children ; child++ ) {
 				for (DataSnapshot ds : dataSnapshot.getChildren()) {
 
-					Log.i(TAG, "DataSnapshot, child of " + ALL_SOCKS_KEY + ": "  + ds);
+					//Log.i(TAG, "DataSnapshot, child of " + ALL_SOCKS_KEY + ": "  + ds);
 
 					Sock enemy = ds.getValue(Sock.class);   //move into if statement
 					String enemyKey = ds.getKey();
 
-					if (enemyKey.equals(sockKey)){
+					if (!enemyKey.equals(sockKey)){
 						mEnemySocks.put(enemyKey, enemy);
-						Log.i(TAG, "Adding/updating enemy in enemy sock list: " + enemy);
+						//Log.i(TAG, "Adding/updating enemy in enemy sock list: " + enemy);
 
 					} else {
-						Log.i(TAG, "(not adding self): " + enemy);
+						//Log.i(TAG, "This is me, not adding: " + enemy);
 					}
 
 				//TODO remove dead socks

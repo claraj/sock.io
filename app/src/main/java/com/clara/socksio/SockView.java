@@ -101,12 +101,12 @@ public class SockView extends View {
 	//Shift all segments
 	public void shift(int x, int y) {
 
-		if (segments!=null) {    //todo why is fb returning empty socks?
+		//if (segments!=null) {    //todo why is fb returning empty socks?
 
 			for (Segment s : segments) {
 				s.shift(x, y);
 			}
-		}
+		//}
 	}
 
 
@@ -117,8 +117,8 @@ public class SockView extends View {
 		//todo - what else should be set?
 		mPaint.setStyle(Paint.Style.FILL);
 
-		sock.setWorldCenterX(worldCenterX);
-		sock.setWorldCenterY(worldCenterY);
+		//sock.setWorldCenterX(worldCenterX);
+		//sock.setWorldCenterY(worldCenterY);
 
 	}
 
