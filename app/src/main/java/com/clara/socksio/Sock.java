@@ -24,6 +24,8 @@ public class Sock {
 	}
 
 	int score;
+	int size;
+
 
 	public int getWorldCenterY() {
 		return worldCenterY;
@@ -42,7 +44,7 @@ public class Sock {
 	}
 
 
-	public Sock() {}  //empty constructor needed?
+	public Sock() {}  //empty constructor needed for firebase
 
 	public ArrayList<SockView.Segment> getSegments() {
 		return segments;
@@ -53,10 +55,11 @@ public class Sock {
 	}
 
 
-	public Sock(ArrayList<SockView.Segment> segments, int worldCenterX, int worldCenterY) {
+	public Sock(ArrayList<SockView.Segment> segments, int worldCenterX, int worldCenterY, int size) {
 		this.segments = segments;
 		this.worldCenterX = worldCenterX;
 		this.worldCenterY = worldCenterY;
+		this.size = size;
 
 
 	}

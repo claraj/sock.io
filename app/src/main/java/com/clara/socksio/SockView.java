@@ -6,6 +6,9 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.view.View;
 
+import com.google.firebase.database.Exclude;
+import com.google.firebase.database.IgnoreExtraProperties;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
@@ -28,6 +31,8 @@ public class SockView extends View implements CircleView {
 	//List of segments central co-ordinates
 	ArrayList<Segment> segments;
 
+	private int mScore;
+
 	@Override
 	public int getCircleCenterX() {
 		return (int)getHeadX();
@@ -39,7 +44,8 @@ public class SockView extends View implements CircleView {
 	}
 
 	public int getSize() {
-		return mSize;}
+		return mSize;
+	}
 
 
 	int worldCenterX;
@@ -71,16 +77,17 @@ public class SockView extends View implements CircleView {
 
 
 	public Sock getSock(){
-		return new Sock(segments, worldCenterX, worldCenterY);
+		return new Sock(segments, worldCenterX, worldCenterY, mSize);
 	}
 
+	@IgnoreExtraProperties
 	static class Segment  implements CircleView{
 
 		float x;
 		float y;
 		float size;
 
-		public Segment() {}
+		public Segment() {}   //needed by firebase
 
 		public Segment(float x, float y, float size) {
 			this.x = x;
@@ -98,11 +105,13 @@ public class SockView extends View implements CircleView {
 			y = y - dy;
 		}
 
+		@Exclude
 		@Override
 		public int getCircleCenterX() {
 			return (int)x;
 		}
 
+		@Exclude    //Firebase ignore
 		@Override
 		public int getCircleCenterY() {
 			return (int)y;
@@ -127,14 +136,13 @@ public class SockView extends View implements CircleView {
 	public SockView(Context context, Sock sock) {
 		super(context);
 		segments = sock.getSegments();
-
 		//todo - what else should be set?
 		mPaint.setStyle(Paint.Style.FILL);
-
-		//sock.setWorldCenterX(worldCenterX);
-		//sock.setWorldCenterY(worldCenterY);
+		mSize = sock.size;
+		mScore = sock.getScore();
 
 	}
+
 
 	public SockView(Context context, int centerx, int centery) {
 		super(context);
@@ -147,7 +155,7 @@ public class SockView extends View implements CircleView {
 
 		Log.i(TAG, "new sock" + segments);
 
-		this.x = x ; this.y = y;
+		//this.x = x ; this.y = y;
 		mPaint.setStyle(Paint.Style.FILL);
 
 	}

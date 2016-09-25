@@ -265,7 +265,8 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		mFrame.addView(mWorld);
 
 		//Create new specks...
-		makeSpecksAddToView();
+		mSpecks = new LinkedList<>();
+		makeSpecksAddToView(speckCount);
 
 		if (mLocal) {
 			createLocalAdversaries();
@@ -363,9 +364,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 				enemySockView.shift(enemySock.getWorldCenterX(), enemySock.getWorldCenterY());   //TODO got to shift relative to world center??
 
 
-				//BuildConfig.DEBUG
-
-
 				int playerXdiff =  -mWorld.getCenterX();
 				int playerYdiff =  -mWorld.getCenterY();
 
@@ -374,13 +372,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 				Log.i(TAG, "Enemy Sock View after shift 1 : " + enemySockView);
 
 
-
 				enemySockView.shift( playerXdiff, playerYdiff ); //keep on screen  (?)
 
-
 				Log.i(TAG, "Enemy sock after shift 2 : " + enemySockView);
-
-				//Assert.fail("Enemy socks need to update correctly");
 
 				//The coordinates in this sock's segments are going to start at world center. So a sock needs to store the center offset.
 
@@ -414,18 +408,14 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		/* No more other socks? */
 
-		//if (enemySocks != null ) {
-			if (enemySocks.size() == 0) {
+		if (enemySocks.size() == 0) {
 
-				//You win! Todo bring on dryers for dryer deathmatch
-				gameOver = true;
-				gameOverText = "YOU ARE THE WINNER";
-				Log.i(TAG, "No more other socks");
+			//You win! Todo bring on dryers for dryer deathmatch
+			gameOver = true;
+			gameOverText = "YOU ARE THE WINNER";
+			Log.i(TAG, "No more other socks");
 
-			}
-//		} else {
-//			Log.i(TAG, "ENEMY SOCK LIST IS NULL");
-//		}
+		}
 
 		if (collidedWithEnemySock()) {
 
@@ -444,7 +434,10 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 				+ " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY()  + "ydiff" + (mWorld.getCenterY() - mSock.getHeadY()) + " ydiff2 " + (ydiff*ydiff)
 				+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
 
-		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
+
+//		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
+		if (!intersects(mWorld, mSock)) {
+
 			Log.i(TAG, "Sock leaves world");
 			gameOverText = "YOU FELL OFF THE WORLD";
 			gameOver = true;
@@ -482,148 +475,22 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 	}
 
-	private boolean endLocalGame() {
-
-		//Check various ways the game can end
-
-		//sock off screen? This isn't possible with the sock centered and background scrolling.
-
-		mGameOver.setVisibility(TextView.VISIBLE);
-		mGameOver.bringToFront();
-		mGameOver.setOnClickListener(restartListener);
-
-		String gameOverText = "";
-		boolean gameOver = false;
-
-		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
-			//Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
-
-			//Log.i(TAG, "hit wall");
-
-			gameOverText = "YOU HIT THE WALL, YOU LOSE";
-			gameOver = true;
-		}
 
 
-		int xdiff = Math.abs(mWorld.getCenterX() - (int) mSock.getHeadX());
-		int ydiff = Math.abs(mWorld.getCenterY() - (int) mSock.getHeadY());
-
-		Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " xdiff = " + (mWorld.getCenterX() - mSock.getHeadX()) + " xdiff2 " + (xdiff*xdiff)
-				+ " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY()  + "ydiff" + (mWorld.getCenterY() - mSock.getHeadY()) + " ydiff2 " + (ydiff*ydiff)
-				+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
 
 
-		if (!intersects(mWorld, mSock)) {
-			//fell off world
-			gameOverText = "YOU FELL OFF THE WORLD";
-		}
 
+	private void makeSpecksAddToView(int number) {
 
-		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
-			Log.i(TAG, "Sock leaves world");
-			gameOverText = "YOU FELL OFF THE WORLD";
-			gameOver = true;
+		//mSpecks = new LinkedList<>();
 
-		}
-
-
-		//But if all specks eaten
-		if (mSpecks.size() == 0) {
-			//all specks eaten
-
-			gameOverText = "ATE ALL THE SPECKS!!";
-			Log.i(TAG, "eaten all specks");
-			gameOver = true;
-
-		}
-
-
-		//TODO adversarial washing machines eat sock
-
-		if (eatenByDryer()) {
-			gameOverText = "THE DRYER GOT YOU";
-			gameOver = true;
-
-		}
-
-		if (gameOver) {
-			gameOverText += "\n" ;
-			gameOverText += "SCORE = " + (int) score;
-			gameOverText += "\n" ;
-			gameOverText += "* tap to replay *";
-			mGameOver.setVisibility(View.VISIBLE);
-			mGameOver.bringToFront();
-			mGameOver.setText(gameOverText);
-		}
-
-		else {
-			Log.i(TAG, "game on");
-		}
-
-		return gameOver;
-	}
-
-
-	private void createLocalAdversaries() {
-
-		//The specks put themselves in random places in a box.
-
-		mDryers = new LinkedList<>();
-
-		//Perhaps we want to decide where the dryers go?
-
-		Random rnd = new Random();
-
-		for (int d = 0 ; d < dryerCount ; d++) {
-
-			//How big is the world?
-
-			int radWithMargin = worldRadius - 100;  //todo measure view bitmap
-
-			int x = (radWithMargin - rnd.nextInt(radWithMargin*2));
-			int y = (radWithMargin - rnd.nextInt(radWithMargin*2));
-
-			//Pythagoras!
-			while (x*x + y*y > radWithMargin*radWithMargin) {
-				 x = (radWithMargin - rnd.nextInt(radWithMargin*2));
-				 y = (radWithMargin - rnd.nextInt(radWithMargin*2));
-			}
-
-			x += centerX;   //And shift to center
-			y += centerY;
-
-			DryerView dryer = new DryerView(this, x, y);
-			mFrame.addView(dryer);
-			mDryers.add(dryer);
-
-		}
-
-		//Log.i(TAG, "Dryers added : " + mDryers);
-	}
-
-	private void updateDryers() {
-		//Move randomly
-
-		for (DryerView dryer : mDryers) {
-			dryer.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
-			dryer.wander(centerX, centerY, worldRadius);
-			dryer.invalidate();
-		}
-
-		//Log.i(TAG, "Dryers updated : " + mDryers);
-
-
-	}
-
-	private void makeSpecksAddToView() {
-
-		mSpecks = new LinkedList<>();
-
-		for (int s = 0 ; s < speckCount ; s++) {
+		for (int s = 0 ; s < number ; s++) {
 			SpeckView speck = new SpeckView(this, centerX, centerY, worldRadius);
 			mSpecks.add(speck);
 			mFrame.addView(speck);
 		}
+
+
 		//Log.i(TAG, "Added initial specks: " + mSpecks);
 
 	}
@@ -651,7 +518,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//Log.i(TAG, "Checking and removing specks. " + mSpecks);
 
-		//TODO a better way? Filtering the list.
+		//TODO a neater way? Filtering the list?
 
 		LinkedList<SpeckView> temp = new LinkedList<>();
 		for (SpeckView speck : mSpecks) {
@@ -664,109 +531,58 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//Log.i(TAG, "Cleared eaten specks. " + mSpecks);
 
+		if (!mLocal) {
+			//regenerate new specks to keep total constant
+			makeSpecksAddToView(specksEaten);
+
+		}
+
 		return specksEaten;
 
 	}
 
-	private boolean eatenByDryer() {
 
-		for (DryerView dryer : mDryers) {
-			if (intersects(dryer, mSock)) {
-
-				return true;
-			}
-		}
-
-		return false;
-
-	}
-
-
-	//todo test me!
 	private boolean intersects(CircleView view1, CircleView view2) {
 
 		int intersect = view1.getSize() + view2.getSize();
 
 		int xdif = Math.abs(view1.getCircleCenterX() - view2.getCircleCenterX());
-		int ydif = Math.abs(view1.getCircleCenterX() - view2.getCircleCenterY());
+		int ydif = Math.abs(view1.getCircleCenterY() - view2.getCircleCenterY());
 
+		return (xdif * xdif + ydif * ydif) < intersect * intersect;
+
+	}
+
+
+//	private boolean intersects(SockView.Segment s, SockView sock) {
+//
+//		int intersect = sock.getSize();
+//
+//		int xdif = Math.abs((int)sock.getHeadX() - (int)s.x);
+//		int ydif = Math.abs((int)sock.getHeadY() - (int)s.y);
+//
 //		if (xdif < intersect && ydif < intersect) {
 //			return true;
 //		}
+//
+//		return  false;
+//	}
 
-		if ( xdif * xdif + ydif * ydif < intersect) {
-			return true;
-		}
+//	private boolean intersects(SpeckView speck, SockView sock) {
+//
+//		int intersect = sock.getSize();
+//
+//		int xdif = Math.abs((int)sock.getHeadX() - speck.x);
+//		int ydif = Math.abs((int)sock.getHeadY() - speck.y);
+//
+//		if (xdif < intersect && ydif < intersect) {
+//			return true;
+//		}
+//
+//		return  false;
+//	}
 
-		return  false;
-	}
 
-
-	private boolean intersects(SockView.Segment s, SockView sock) {
-
-		int intersect = sock.getSize();
-
-		int xdif = Math.abs((int)sock.getHeadX() - (int)s.x);
-		int ydif = Math.abs((int)sock.getHeadY() - (int)s.y);
-
-		if (xdif < intersect && ydif < intersect) {
-			return true;
-		}
-
-		return  false;
-	}
-
-	private boolean intersects(SpeckView speck, SockView sock) {
-
-		int intersect = sock.getSize();
-
-		int xdif = Math.abs((int)sock.getHeadX() - speck.x);
-		int ydif = Math.abs((int)sock.getHeadY() - speck.y);
-
-		if (xdif < intersect && ydif < intersect) {
-			return true;
-		}
-
-		return  false;
-	}
-
-	private boolean intersects(DryerView dryer, SockView sock) {
-
-		int intersect = sock.getSize();  //RADIUS of sock head
-
-		int sockHeadX = (int)sock.getHeadX();
-		int sockHeadY = (int)sock.getHeadY();
-
-		float dryerHeight = dryer.height();
-		//float dryerMHeight = dryer.getMeasuredHeight();
-
-		float dryerWidth = dryer.width();
-		//float dryerMWidth = dryer.getMeasuredWidth();
-
-		float dryerTopX = dryer.x();
-		float dryerEndX = dryerTopX + dryerWidth;
-		float dryerTopY = dryer.y();
-		float dryerEndY = dryerTopY + dryerHeight;
-
-//		Log.i(TAG, sockHeadX + " "
-//				+ sockHeadY + " "
-//				+ dryerTopX  + " "
-//				+  dryerTopX  + " " +
-//				dryerHeight  + " " +
-//				 dryerWidth
-//						+ " " +
-//						dryerEndX  + " " +
-//						dryerEndY
-//				 );
-
-		if (sockHeadX > dryerTopX && sockHeadX < dryerEndX &&
-				sockHeadY > dryerTopY && sockHeadY < dryerEndY) {
-			//Log.i(TAG, "dryer-sock collision");
-			return true;
-		}
-
-		return  false;
-	}
 
 
 	private void updateSpecks() {
@@ -810,6 +626,184 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		//Stop game ! //tODO !!! Stop clock ticks
 		mFirebase.removeSelfFromFirebase();
 	}
+
+
+
+	/* Local game methods. TODO were working before Firebase but should re-test after modifications */
+	private boolean endLocalGame() {
+
+		//Check various ways the game can end
+
+
+		mGameOver.setVisibility(TextView.VISIBLE);
+		mGameOver.bringToFront();
+		mGameOver.setOnClickListener(restartListener);
+
+		String gameOverText = "";
+		boolean gameOver = false;
+
+		int xdiff = Math.abs(mWorld.getCenterX() - (int) mSock.getHeadX());
+		int ydiff = Math.abs(mWorld.getCenterY() - (int) mSock.getHeadY());
+
+		Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " xdiff = " + (mWorld.getCenterX() - mSock.getHeadX()) + " xdiff2 " + (xdiff*xdiff)
+				+ " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY()  + "ydiff" + (mWorld.getCenterY() - mSock.getHeadY()) + " ydiff2 " + (ydiff*ydiff)
+				+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
+
+
+		//		if (!intersects(mWorld, mSock)) {
+		//			//fell off world
+		//			gameOverText = "YOU FELL OFF THE WORLD";
+		//		}
+
+
+		if (! intersects(mWorld, mSock)) {
+			//if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
+			Log.i(TAG, "Sock leaves world");
+			gameOverText = "YOU FELL OFF THE WORLD";
+			gameOver = true;
+
+		}
+
+
+		//But if all specks eaten
+		if (mSpecks.size() == 0) {
+			//all specks eaten
+
+			gameOverText = "ATE ALL THE SPECKS!!";
+			Log.i(TAG, "eaten all specks");
+			gameOver = true;
+
+		}
+
+
+		//TODO adversarial washing machines eat sock
+
+		if (eatenByDryer()) {
+			gameOverText = "THE DRYER GOT YOU";
+			gameOver = true;
+
+		}
+
+		if (gameOver) {
+			gameOverText += "\n" ;
+			gameOverText += "SCORE = " + (int) score;
+			gameOverText += "\n" ;
+			gameOverText += "* tap to replay *";
+			mGameOver.setVisibility(View.VISIBLE);
+			mGameOver.bringToFront();
+			mGameOver.setText(gameOverText);
+		}
+
+		else {
+			Log.i(TAG, "game on");
+		}
+
+		return gameOver;
+	}
+
+	private void createLocalAdversaries() {
+
+		//The specks put themselves in random places in a box.
+
+		mDryers = new LinkedList<>();
+
+		//Perhaps we want to decide where the dryers go?
+
+		Random rnd = new Random();
+
+		for (int d = 0 ; d < dryerCount ; d++) {
+
+			//How big is the world?
+
+			int radWithMargin = worldRadius - 100;  //todo measure view bitmap
+
+			int x = (radWithMargin - rnd.nextInt(radWithMargin*2));
+			int y = (radWithMargin - rnd.nextInt(radWithMargin*2));
+
+			//Pythagoras!
+			while (x*x + y*y > radWithMargin*radWithMargin) {
+				x = (radWithMargin - rnd.nextInt(radWithMargin*2));
+				y = (radWithMargin - rnd.nextInt(radWithMargin*2));
+			}
+
+			x += centerX;   //And shift to center
+			y += centerY;
+
+			DryerView dryer = new DryerView(this, x, y);
+			mFrame.addView(dryer);
+			mDryers.add(dryer);
+
+		}
+
+		//Log.i(TAG, "Dryers added : " + mDryers);
+	}
+
+	private void updateDryers() {
+		//Move randomly
+
+		for (DryerView dryer : mDryers) {
+			dryer.shift((int)xMoveDist, (int)yMoveDist); //keep on screen  (?)
+			dryer.wander(centerX, centerY, worldRadius);
+			dryer.invalidate();
+		}
+
+		//Log.i(TAG, "Dryers updated : " + mDryers);
+
+
+	}
+
+	private boolean eatenByDryer() {
+
+		for (DryerView dryer : mDryers) {
+			if (intersects(dryer, mSock)) {
+
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	private boolean intersects(DryerView dryer, SockView sock) {
+
+		int intersect = sock.getSize();  //RADIUS of sock head
+
+		int sockHeadX = (int)sock.getHeadX();
+		int sockHeadY = (int)sock.getHeadY();
+
+		float dryerHeight = dryer.height();
+		//float dryerMHeight = dryer.getMeasuredHeight();
+
+		float dryerWidth = dryer.width();
+		//float dryerMWidth = dryer.getMeasuredWidth();
+
+		float dryerTopX = dryer.x();
+		float dryerEndX = dryerTopX + dryerWidth;
+		float dryerTopY = dryer.y();
+		float dryerEndY = dryerTopY + dryerHeight;
+
+		//		Log.i(TAG, sockHeadX + " "
+		//				+ sockHeadY + " "
+		//				+ dryerTopX  + " "
+		//				+  dryerTopX  + " " +
+		//				dryerHeight  + " " +
+		//				 dryerWidth
+		//						+ " " +
+		//						dryerEndX  + " " +
+		//						dryerEndY
+		//				 );
+
+		if (sockHeadX > dryerTopX && sockHeadX < dryerEndX &&
+				sockHeadY > dryerTopY && sockHeadY < dryerEndY) {
+			//Log.i(TAG, "dryer-sock collision");
+			return true;
+		}
+
+		return  false;
+	}
+
+
 
 }
 
