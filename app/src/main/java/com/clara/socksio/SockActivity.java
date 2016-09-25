@@ -78,9 +78,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	private int speckCount = 200;
 	private int dryerCount = 5;
 
-	private long period = 150;
-	private long maxDistanceMoved = 15;
-	private float angle = 1;
+	private long period = 150;            // time between ms
+	private long maxDistanceMoved = 15;   //How far a sock can move in one tick
+	private float angle = 1;             //initial angle
 	private float xMoveDist = 14f;    //Amount moved in last clock tick
 	private float yMoveDist = 14f;    //Amount moved in last clock tick
 
@@ -91,13 +91,16 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	private int centerY;
 	private int worldRadius = 1500;
 
-	private float score = 0;
+	private int score = 0;			//this sock's score
 	private boolean mLocal = true;
+
+	View.OnTouchListener mTouchListener;
 
 	FirebaseInteraction mFirebase;
 
-	private HashMap<String, Sock> enemySocks;
-	private ArrayList<SockView> enemySockViews;
+	private HashMap<String, Sock> enemySocks;      // FB keys and sock objects
+	private ArrayList<SockView> enemySockViews;    // and corresponding SockViews
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -112,9 +115,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		mFirebase = new FirebaseInteraction(this);
 		mLocal = !mFirebase.connectedToFirebase();
 
-
-
-
 		String gameTypeMessage = mLocal ? "No connection to server. Battle the dryers" : "Sock VS Sock";
 		Toast.makeText(this, gameTypeMessage, Toast.LENGTH_SHORT).show();
 
@@ -124,166 +124,10 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 				restart();
 			}
 		};
-	}
 
-	@Override
-	public void onWindowFocusChanged(boolean hasFocus) {
-
-		//Mostly figuring out what size the screen is
-		//Log.i(TAG, mFrame.getMeasuredHeight() + " " + mFrame.getMeasuredWidth());
-
-		maxX = mFrame.getWidth();
-		maxY = mFrame.getHeight();
-
-		centerX = (int) maxX / 2;
-		centerY = (int) maxY / 2;
-
-		//And new sock
-
-		if (mSock != null) { mFrame.removeView(mSock); }
-		mSock = new SockView(SockActivity.this, centerX, centerY);
-		mSock.addSegmentToEnd(centerX+10, centerY+10);
-		mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
-		mFrame.addView(mSock);
-
-		mFirebase.setSock(mSock.getSock());
-		mFirebase.getDataAboutOtherSocks();
-
-		//And start game.
-		if (mLocal) {
-			restart();
-		}
-	}
-
-
-	@Override
-	public void serverDataAvailable() {
-		//Start server game
-		Log.i(TAG, "Server game running? " + serverGameRunning);
-		if (serverGameRunning == false) {
-			restart();
-			serverGameRunning = true;
-		}
-	}
-
-
-	private void restart() {
-
-		//reset score, remove message - //TODO doesn't go away?
-		score = 0;
-
-		mGameOver.setVisibility(View.INVISIBLE);   //fixme ?
-		mGameOver.setText("");  //hacky hack. why setVis not working?
-
-		//remove listener from TextView
-		mGameOver.setOnClickListener(null); // no more restarting!
-
-		//remove old specks, sock, enemy socks, dryers, world...
-
-		//mFrame.removeView(mSock);   //deal with sock elsewhere
-
-		if (mSpecks != null) {
-			for (SpeckView speck : mSpecks) {
-				mFrame.removeView(speck);
-			}
-		}
-
-		if (mDryers != null) {
-			for (DryerView dryer : mDryers) {
-				mFrame.removeView(dryer);
-			}
-		}
-
-		mFrame.removeView(mWorld);
-
-		//Create and add new world
-		mWorld = new WorldView(this, centerX, centerY, worldRadius);
-		mFrame.addView(mWorld);
-
-		//Create new specks...
-		makeSpecksAddToView();
-
-//		//And new sock
-//		mSock = new SockView(SockActivity.this, centerX, centerY);
-//		mSock.addSegmentToEnd(centerX+10, centerY+10);
-//		mSock.addSegmentToEnd(centerX+10, centerY+10);
-//		mFrame.addView(mSock);
-//
-//		mFirebase.setSock(mSock.getSock());
-//		mFirebase.getDataAboutOtherSocks();
-
-		//and add boundary
-
-		updateSock();   // go!
-		updateSpecks();
-
-		//Add tumble dryers if local game
-
-		if (mLocal) {
-			createLocalAdversaries();
-			updateDryers();  //adversaries
-
-		}
-
-		else {
-			//Add enemy socks, otherwise
-			updateEnemySocks();
-		}
-
-		mSock.bringToFront();
-
-		//** Stack overflow ftw http://stackoverflow.com/questions/10845172/android-running-a-method-periodically-using-postdelayed-call */
-		final Handler handler = new Handler();
-		handler.postDelayed(new Runnable() {
-			@Override
-			public void run() {
-				Log.i(TAG, "TICK");
-
-
-				Log.i(TAG, "world coords xMovDist = " + xMoveDist + " ymoved "  + yMoveDist + " centerX " + centerX + " centerY " + centerY +
-					" center of world at x "  + mWorld.getCenterX() + ", y " + mWorld.getCenterY()
-
-				);
-
-
-				if (mLocal) {
-
-					updateSock();
-					updateSpecks();
-					updateDryers();
-
-					if (!endLocalGame()) {
-						handler.postDelayed(this, period); //run again!
-					}
-				}
-
-				else {
-
-					updateSock();
-					updateSpecks();
-					updateEnemySocks();
-					mFirebase.sendNewStateToFirebase(mSock.getSock());
-
-					if (!endFirebaseGame()) {
-						handler.postDelayed(this, period); //run again!
-					} else {
-						//game over, remove self from server
-						mFirebase.removeSelfFromFirebase();
-
-					}
-				}
-			}
-		}, period);
-
-		mFrame.setOnTouchListener(new View.OnTouchListener() {
+		mTouchListener = new View.OnTouchListener() {
 			@Override
 			public boolean onTouch(View view, MotionEvent motionEvent) {
-
-				//Log.i(TAG, "touch event");
-
-				//Log.i(TAG, ""+ motionEvent.getActionMasked());
-
-				//Log.i(TAG, "X EVENT = " + motionEvent.getX() + " Y EVENT = " + motionEvent.getY());
 
 				switch (motionEvent.getActionMasked()) {
 
@@ -321,10 +165,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 						xMoveDist = (float) Math.cos(angle) * maxDistanceMoved;
 						yMoveDist = (float) Math.sin(angle) * maxDistanceMoved;
 
-//						xMoveDist = -xMoveDist;
-//						yMoveDist = -yMoveDist;
-
-
 						//Log.w(TAG, "Angle in rads " + angle + " headX " + sockHeadX + " headY " + sockHeadY + " xtouch " + touchX + " y touch " + touchY + " xdelta " + xDelta + " ydelta " + yDelta + " xmovedist " + xMoveDist + " ymovedist " + yMoveDist);
 
 						break;
@@ -333,7 +173,161 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 				return true;
 			}
-		});
+		};
+
+	}
+
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+
+		Log.i(TAG, "on Window Focus Changed");
+
+		//Figuring out what size the screen is
+		//Log.i(TAG, mFrame.getMeasuredHeight() + " " + mFrame.getMeasuredWidth());
+
+		//AND starting game
+
+		maxX = mFrame.getWidth();
+		maxY = mFrame.getHeight();
+
+		centerX = (int) maxX / 2;
+		centerY = (int) maxY / 2;
+
+		//And new sock
+
+		Log.i(TAG, "Adding sock");
+
+
+		if (mSock != null) { mFrame.removeView(mSock); }
+		mSock = new SockView(SockActivity.this, centerX, centerY);
+		mSock.addSegmentToEnd(centerX+10, centerY+10);
+		mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
+		mFirebase.setSock(mSock.getSock());
+		mFirebase.getDataAboutOtherSocks();   //This is what calls the callback serverDataAvailable
+
+
+		//And start game.
+		if (mLocal) {
+			restart();
+		}
+	}
+
+
+	@Override
+	public void serverDataAvailable() {
+		//Start server game
+
+		Log.i(TAG, "Server game running? " + serverGameRunning);
+		if (serverGameRunning == false) {
+
+			mFrame.addView(mSock);
+			mSock.bringToFront();
+			restart();
+			serverGameRunning = true;
+		}
+	}
+
+
+	private void restart() {
+
+
+		Log.i(TAG, "Start game");
+
+		//reset score, remove message - //TODO doesn't go away?
+		score = 0;
+
+		mGameOver.setVisibility(View.INVISIBLE);   //fixme ?
+		mGameOver.setText("");  //hacky hack. why setVis not working?
+
+		//remove listener from TextView
+		mGameOver.setOnClickListener(null); // no more restarting!
+
+		/** remove old game components - specks, enemy socks, dryers, world... **/
+
+		if (mSpecks != null) {
+			for (SpeckView speck : mSpecks) {
+				mFrame.removeView(speck);
+			}
+		}
+
+		if (mDryers != null) {
+			for (DryerView dryer : mDryers) {
+				mFrame.removeView(dryer);
+			}
+		}
+
+		mFrame.removeView(mWorld);
+
+		/* Add new game components - specks, enemys, dryers, world... */
+
+		//Create and add new world
+		mWorld = new WorldView(this, centerX, centerY, worldRadius);
+		mFrame.addView(mWorld);
+
+		//Create new specks...
+		makeSpecksAddToView();
+
+		if (mLocal) {
+			createLocalAdversaries();
+			updateDryers();
+		}
+
+		else {
+			//Otherwise, add enemy socks
+			updateEnemySocks();
+		}
+
+
+		updateSock();   // go!
+		updateSpecks();     //shift specks so looks like background scrolls
+
+		mSock.bringToFront();  //Move this player's sock to front
+
+		//** Stack overflow ftw http://stackoverflow.com/questions/10845172/android-running-a-method-periodically-using-postdelayed-call */
+		final Handler handler = new Handler();
+		handler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				Log.i(TAG, "TICK");
+
+//				Log.i(TAG, "world coords xMovDist = " + xMoveDist + " ymoved "  + yMoveDist + " centerX " + centerX + " centerY " + centerY +
+//					" center of world at x "  + mWorld.getCenterX() + ", y " + mWorld.getCenterY());
+
+
+				if (mLocal) {
+					updateSock();
+					updateSpecks();
+					updateDryers();
+					if (!endLocalGame()) {
+						handler.postDelayed(this, period); //run again!
+					} else {
+//						mSock = new SockView(SockActivity.this, centerX, centerY);
+//						mSock.addSegmentToEnd(centerX+10, centerY+10);
+//						mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
+					}
+				}
+
+				else {
+					updateSock();
+					updateSpecks();
+					updateEnemySocks();
+					mSock.getSock().setScore(score);
+					mFirebase.sendNewStateToFirebase(mSock.getSock());
+					if (!endFirebaseGame()) {
+						handler.postDelayed(this, period); //run again!
+					} else {
+						//game over, remove self from server
+						mFirebase.removeSelfFromFirebase();
+//						mSock = new SockView(SockActivity.this, centerX, centerY);
+//						mSock.addSegmentToEnd(centerX+10, centerY+10);
+//						mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
+//						mFirebase.setSock(mSock.getSock());
+					}
+				}
+			}
+		}, period);
+
+		mFrame.setOnTouchListener(mTouchListener);
 	}
 
 	private void updateEnemySocks() {
@@ -420,7 +414,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		/* No more other socks? */
 
-		if (enemySocks != null ) {
+		//if (enemySocks != null ) {
 			if (enemySocks.size() == 0) {
 
 				//You win! Todo bring on dryers for dryer deathmatch
@@ -429,9 +423,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 				Log.i(TAG, "No more other socks");
 
 			}
-		} else {
-			Log.i(TAG, "ENEMY SOCK LIST IS NULL");
-		}
+//		} else {
+//			Log.i(TAG, "ENEMY SOCK LIST IS NULL");
+//		}
 
 		if (collidedWithEnemySock()) {
 
@@ -474,26 +468,100 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 	private boolean collidedWithEnemySock() {
 
-		//Consult
-
 		for (SockView enemySockView : enemySockViews) {
 
 			//Check all segments
-
 			for (SockView.Segment s : enemySockView.segments)  {
-
 				if (intersects(s, mSock)) {
 					return true;
 				}
-
 			}
-
 		}
 
 		return false;
 
 	}
 
+	private boolean endLocalGame() {
+
+		//Check various ways the game can end
+
+		//sock off screen? This isn't possible with the sock centered and background scrolling.
+
+		mGameOver.setVisibility(TextView.VISIBLE);
+		mGameOver.bringToFront();
+		mGameOver.setOnClickListener(restartListener);
+
+		String gameOverText = "";
+		boolean gameOver = false;
+
+		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
+			//Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
+
+			//Log.i(TAG, "hit wall");
+
+			gameOverText = "YOU HIT THE WALL, YOU LOSE";
+			gameOver = true;
+		}
+
+
+		int xdiff = Math.abs(mWorld.getCenterX() - (int) mSock.getHeadX());
+		int ydiff = Math.abs(mWorld.getCenterY() - (int) mSock.getHeadY());
+
+		Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " xdiff = " + (mWorld.getCenterX() - mSock.getHeadX()) + " xdiff2 " + (xdiff*xdiff)
+				+ " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY()  + "ydiff" + (mWorld.getCenterY() - mSock.getHeadY()) + " ydiff2 " + (ydiff*ydiff)
+				+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
+
+
+		if (!intersects(mWorld, mSock)) {
+			//fell off world
+			gameOverText = "YOU FELL OFF THE WORLD";
+		}
+
+
+		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
+			Log.i(TAG, "Sock leaves world");
+			gameOverText = "YOU FELL OFF THE WORLD";
+			gameOver = true;
+
+		}
+
+
+		//But if all specks eaten
+		if (mSpecks.size() == 0) {
+			//all specks eaten
+
+			gameOverText = "ATE ALL THE SPECKS!!";
+			Log.i(TAG, "eaten all specks");
+			gameOver = true;
+
+		}
+
+
+		//TODO adversarial washing machines eat sock
+
+		if (eatenByDryer()) {
+			gameOverText = "THE DRYER GOT YOU";
+			gameOver = true;
+
+		}
+
+		if (gameOver) {
+			gameOverText += "\n" ;
+			gameOverText += "SCORE = " + (int) score;
+			gameOverText += "\n" ;
+			gameOverText += "* tap to replay *";
+			mGameOver.setVisibility(View.VISIBLE);
+			mGameOver.bringToFront();
+			mGameOver.setText(gameOverText);
+		}
+
+		else {
+			Log.i(TAG, "game on");
+		}
+
+		return gameOver;
+	}
 
 
 	private void createLocalAdversaries() {
@@ -561,79 +629,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	}
 
 
-    private boolean endLocalGame() {
-
-		//Check various ways the game can end
-
-	    //sock off screen? This isn't possible with the sock centered and background scrolling.
-
-		mGameOver.setVisibility(TextView.VISIBLE);
-		mGameOver.bringToFront();
-		mGameOver.setOnClickListener(restartListener);
-
-		String gameOverText = "";
-		boolean gameOver = false;
-
-		if (mSock.getHeadX() < 0 || mSock.getHeadY() < 0 || mSock.getHeadX() > maxX || mSock.getHeadY() > maxY) {
-			//Log.i(TAG, "Head is off screen " + mSock.getHeadX() +"  "+mSock.getHeadY());
-
-			//Log.i(TAG, "hit wall");
-
-			gameOverText = "YOU HIT THE WALL, YOU LOSE";
-			gameOver = true;
-		}
-
-
-		int xdiff = Math.abs(mWorld.getCenterX() - (int) mSock.getHeadX());
-		int ydiff = Math.abs(mWorld.getCenterY() - (int) mSock.getHeadY());
-
-				Log.i(TAG, "world x "+ mWorld.getCenterX() + " sock x " +  mSock.getHeadX() + " xdiff = " + (mWorld.getCenterX() - mSock.getHeadX()) + " xdiff2 " + (xdiff*xdiff)
-						+ " world y " +  mWorld.getCenterY() + " sock y " + mSock.getHeadY()  + "ydiff" + (mWorld.getCenterY() - mSock.getHeadY()) + " ydiff2 " + (ydiff*ydiff)
-						+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
-
-		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
-			Log.i(TAG, "Sock leaves world");
-			gameOverText = "YOU FELL OFF THE WORLD";
-			gameOver = true;
-
-		}
-
-
-		//But if all specks eaten
-		if (mSpecks.size() == 0) {
-			//all specks eaten
-
-			gameOverText = "ATE ALL THE SPECKS!!";
-			Log.i(TAG, "eaten all specks");
-			gameOver = true;
-
-		}
-
-
-		//TODO adversarial washing machines eat sock
-
-		if (eatenByDryer()) {
-			gameOverText = "THE DRYER GOT YOU";
-			gameOver = true;
-
-		}
-
-		if (gameOver) {
-			gameOverText += "\n" ;
-			gameOverText += "SCORE = " + (int) score;
-			gameOverText += "\n" ;
-			gameOverText += "* tap to replay *";
-			mGameOver.setVisibility(View.VISIBLE);
-			mGameOver.bringToFront();
-			mGameOver.setText(gameOverText);
-		}
-
-		else {
-			Log.i(TAG, "game on");
-		}
-
-		return gameOver;
-    }
 
 	private int eatSpecks() {
 
@@ -647,8 +642,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 			if (intersects(speck, mSock)) {
 
 				mFrame.removeView(speck);
-
-				//speck.invalidate(); //?
 				score++;
 				specksEaten++;
 				//Log.i(TAG, "Eaten speck, score is " + score);
@@ -671,7 +664,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//Log.i(TAG, "Cleared eaten specks. " + mSpecks);
 
-
 		return specksEaten;
 
 	}
@@ -689,6 +681,27 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 	}
 
+
+	//todo test me!
+	private boolean intersects(CircleView view1, CircleView view2) {
+
+		int intersect = view1.getSize() + view2.getSize();
+
+		int xdif = Math.abs(view1.getCircleCenterX() - view2.getCircleCenterX());
+		int ydif = Math.abs(view1.getCircleCenterX() - view2.getCircleCenterY());
+
+//		if (xdif < intersect && ydif < intersect) {
+//			return true;
+//		}
+
+		if ( xdif * xdif + ydif * ydif < intersect) {
+			return true;
+		}
+
+		return  false;
+	}
+
+
 	private boolean intersects(SockView.Segment s, SockView sock) {
 
 		int intersect = sock.getSize();
@@ -701,9 +714,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		}
 
 		return  false;
-
-
-
 	}
 
 	private boolean intersects(SpeckView speck, SockView sock) {

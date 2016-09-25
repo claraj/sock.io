@@ -14,7 +14,7 @@ import java.util.Random;
  * Created by admin on 9/22/16.
  */
 
-public class SockView extends View {
+public class SockView extends View implements CircleView {
 
 	private static String TAG = "SOCKVIEW";
 
@@ -23,10 +23,20 @@ public class SockView extends View {
 
 	private float x, y;
 	private final Paint mPaint = new Paint();
-	private int mSize = 20;
+	protected int mSize = 20;
 
 	//List of segments central co-ordinates
 	ArrayList<Segment> segments;
+
+	@Override
+	public int getCircleCenterX() {
+		return (int)getHeadX();
+	}
+
+	@Override
+	public int getCircleCenterY() {
+		return (int)getHeadY();
+	}
 
 	public int getSize() {
 		return mSize;}
@@ -64,16 +74,18 @@ public class SockView extends View {
 		return new Sock(segments, worldCenterX, worldCenterY);
 	}
 
-	static class Segment {
+	static class Segment  implements CircleView{
 
 		float x;
 		float y;
+		float size;
 
 		public Segment() {}
 
-		public Segment(float x, float y) {
+		public Segment(float x, float y, float size) {
 			this.x = x;
 			this.y = y;
+			this.size = size;
 		}
 
 		@Override
@@ -86,6 +98,20 @@ public class SockView extends View {
 			y = y - dy;
 		}
 
+		@Override
+		public int getCircleCenterX() {
+			return (int)x;
+		}
+
+		@Override
+		public int getCircleCenterY() {
+			return (int)y;
+		}
+
+		@Override
+		public int getSize() {
+			return (int)size;
+		}
 	}
 
 	//Shift all segments
@@ -117,23 +143,19 @@ public class SockView extends View {
 		this.centerY = centery;
 
 		segments = new ArrayList<>();
-		segments.add(new Segment(centerx, centerY));
+		segments.add(new Segment(centerx, centery, mSize));
 
 		Log.i(TAG, "new sock" + segments);
 
 		this.x = x ; this.y = y;
 		mPaint.setStyle(Paint.Style.FILL);
 
-		Random rnd = new Random();
-		blue = rnd.nextInt(255);
-		green = rnd.nextInt(255);
-		red = rnd.nextInt(255);
 	}
 
 
 	//Add to end of segments (?)
 	public void addSegmentToEnd(float x, float y) {
-		segments.add(new Segment(x, y));         //add to end
+		segments.add(new Segment(x, y, mSize));         //add to end
 		//Log.d(TAG, "Added segment to end " + +x + " " + y +  " " + segments);
 	}
 
@@ -144,7 +166,7 @@ public class SockView extends View {
 
 		//shift everything
 		shift((int)xDiff, (int)yDiff);
-		segments.add(0, new Segment(centerX, centerY));
+		segments.add(0, new Segment(centerX, centerY, mSize));
 
 	}
 
@@ -152,20 +174,18 @@ public class SockView extends View {
 		segments.remove(segments.size() -1);
 	}
 
-	private int blue;
-	private int red;
-	private int green;
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		Log.i(TAG, "drawing " + x + " " + y);
 
+		int red = 50;
+		int blue = 100;
+
 		if (segments != null) {            ///todo why are segments null? What is FB returning?
 			for (Segment s : segments) {
 				red = (red + 20) % 255;
 				blue = (blue + 15) % 255;
-				green = (green - 25) % 255;
-
 				mPaint.setARGB(150, red, 0, blue);
 				canvas.drawCircle(s.x, s.y, mSize, mPaint);
 			}

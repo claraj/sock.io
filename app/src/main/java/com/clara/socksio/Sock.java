@@ -3,15 +3,27 @@ package com.clara.socksio;
 import java.util.ArrayList;
 
 /**
- * Created by admin on 9/23/16.
+ *  Sock represents objects store in Firebase.
  */
 
 public class Sock {
 
+	//Segments, as used by each sock to draw itself in its own world. Must be shifted to draw sock relative to other socks.
 	ArrayList<SockView.Segment> segments;
 
+	// x-coords of center of world.
 	int worldCenterX;
 	int worldCenterY;
+
+	public int getScore() {
+		return score;
+	}
+
+	public void setScore(int score) {
+		this.score = score;
+	}
+
+	int score;
 
 	public int getWorldCenterY() {
 		return worldCenterY;

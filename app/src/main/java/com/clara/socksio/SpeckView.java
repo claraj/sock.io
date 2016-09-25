@@ -15,7 +15,7 @@ import static android.content.ContentValues.TAG;
  * Created by clara on 9/22/16.
  */
 
-class SpeckView extends View {
+class SpeckView extends View implements CircleView{
 
 	//Draw at random location
 
@@ -51,13 +51,6 @@ class SpeckView extends View {
 		mPaint.setStyle(Paint.Style.FILL);
 		mPaint.setARGB(170, 255, 255, 255);  //white, slightly transparent
 
-
-
-		//		//TODO does this do anything?
-//		FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size);
-//		params.leftMargin = x;
-//		params.topMargin = y;
-
 	}
 
 	public void shift(int dx, int dy) {
@@ -75,4 +68,19 @@ class SpeckView extends View {
 		return "x=" + x + " y=" + y + " eaten? " + eaten;
 	}
 
+
+	@Override
+	public int getCircleCenterX() {
+		return x;
+	}
+
+	@Override
+	public int getCircleCenterY() {
+		return y;
+	}
+
+	@Override
+	public int getSize() {
+		return size;
+	}
 }

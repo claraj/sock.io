@@ -20,35 +20,27 @@ public class FirebaseInteraction {
 
 	private String sockKey;
 
-	private Sock mSock;
+	private Sock mSock;   //This player's sock
 
-//	private List<Sock> mEnemySocks;
-
-	private HashMap<String, Sock> mEnemySocks;
+	private HashMap<String, Sock> mEnemySocks;    //Firebase keys; Sock objects
 
 	private ChildEventListener mSockChildListener;
 	private ValueEventListener mSockValueListener;
 
 	private DatabaseReference mSockDatabaseRef;
 
-	private ServerDataReadyListener dataReadyListener;
+	private ServerDataReadyListener dataReadyListener;   //Probably an activity, notified when DB connected and have data
 
 	private final String ALL_SOCKS_KEY = "all_socks";
+
 
 	public FirebaseInteraction(ServerDataReadyListener listener) {
 
 		this.dataReadyListener = listener;
 
-		//Set up data listeners
-		//TODO get locations of all other socks and their scores
-
 		//https://firebase.google.com/docs/database/android/save-data
 
 		mEnemySocks = new HashMap<>();
-
-		//Log.i(TAG, "push sock?" + mSock);
-
-		//Make a query, and give it a listener
 
 		FirebaseAuth fbauth = FirebaseAuth.getInstance();
 		Log.i("TAG", " current user : " + fbauth.getCurrentUser());   //should be null, allow anon connections
@@ -57,31 +49,32 @@ public class FirebaseInteraction {
 		mSockDatabaseRef = database.getReference();
 
 		Log.i(TAG, " database reference : " + mSockDatabaseRef);
+
 	}
 
 
 	public void getDataAboutOtherSocks() {
+
+		Log.i(TAG, "get data about other socks");
+
 
 		mSockChildListener = new ChildEventListener() {
 			@Override
 			public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 				//deal with data here
 				//new sock joined game (?)
-				Log.i(TAG, "Child added key is " + s + " value is " + dataSnapshot.getValue());
+				Log.i(TAG, "Child added key is " + s + " value is " + dataSnapshot);
 			}
 
 			@Override
 			public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 				//and here - socks moved
-				Log.i(TAG, "Child changed " + s + dataSnapshot.getValue());
-
+				Log.i(TAG, "Child changed " + s + dataSnapshot);
 			}
 
 			@Override
 			public void onChildRemoved(DataSnapshot dataSnapshot) {
-				//sock left game
-				Log.i(TAG, "Child removed " + dataSnapshot.getValue());
-
+				Log.i(TAG, "Child removed " + dataSnapshot);
 			}
 
 			@Override
@@ -98,29 +91,19 @@ public class FirebaseInteraction {
 			}
 		};
 
-
-		//Query allOtherSnakes = mSockDatabaseRef.child(ALL_SOCKS_KEY);
-		//allOtherSnakes.addChildEventListener(mSockChildListener);       //do we need?
-
-
 		Query allOtherSnakesData = mSockDatabaseRef.child(ALL_SOCKS_KEY);
 
+		//onDataChanged is also called when query first executes. Once we have this data, can notify game that it is ready to start.
 		allOtherSnakesData.addValueEventListener(new ValueEventListener() {
 			@Override
 			public void onDataChange(DataSnapshot dataSnapshot) {
 
 				Log.i(TAG, "value event " + dataSnapshot);
 
-
 				if (mEnemySocks == null) {
 					mEnemySocks = new HashMap<String, Sock>();
 				}
 
-				//mEnemySocks.add(dataSnapshot.getValue(Sock.class));
-
-				long children = dataSnapshot.getChildrenCount();
-
-//				for (long child = 0 ; 0 < children ; child++ ) {
 				for (DataSnapshot ds : dataSnapshot.getChildren()) {
 
 					//Log.i(TAG, "DataSnapshot, child of " + ALL_SOCKS_KEY + ": "  + ds);
@@ -135,14 +118,10 @@ public class FirebaseInteraction {
 					} else {
 						//Log.i(TAG, "This is me, not adding: " + enemy);
 					}
-
-				//TODO remove dead socks
-
 				}
 
 				Log.i(TAG, "all other socks, notifying listener " + mEnemySocks);
 				dataReadyListener.serverDataAvailable();
-
 
 			}
 
@@ -152,23 +131,16 @@ public class FirebaseInteraction {
 			}
 		});
 
-
-	//	Log.i(TAG, "push sock?" + mSock);
-
-		//Make a query, and give it a listener
-
-
-
 	}
 
 	public void setSock(Sock sock) {
 		mSock = sock;
 
-		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).push();
-		String key = ref.getKey();
-		ref.setValue(sock);   //add new sock.
-
+		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).push();  	//Create a new key, will be key for this player's sock
+		String key = ref.getKey();												//Save key
 		sockKey = key;
+		ref.setValue(mSock);   //add new sock.									//And save this sock as its value
+
 		Log.i(TAG, "Set/add sock result from fb = " + sockKey + " " + sock);
 
 	}
@@ -179,13 +151,11 @@ public class FirebaseInteraction {
 
 
 	void removeSelfFromFirebase() {
-		//TODO
 
-		Log.d(TAG, "ref " + mSockDatabaseRef);
+//		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey);
+//		ref.removeValue();
 
-		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey);
-
-		ref.removeValue();
+		mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey).removeValue();
 
 		Log.d(TAG, "removing sock for key " + sockKey);
 
@@ -195,16 +165,16 @@ public class FirebaseInteraction {
 	 void sendNewStateToFirebase(Sock sock) {
 
 		//TODO where is this sock, and current score
-		 //todo uh, have a reference to the SockActivity sock?
 
 		 Log.i(TAG, "send new state to firebase " + sock);
 
-		mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey).setValue(sock);   //todo  need to update ??
+		mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey).setValue(sock);
 
 	}
 
 
 	 boolean connectedToFirebase() {
+
 
 		 return (mSockDatabaseRef != null) ;   //did we end up with a db reference?
 //		try {

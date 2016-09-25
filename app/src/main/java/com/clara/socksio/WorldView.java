@@ -10,7 +10,7 @@ import android.view.View;
  * Created by admin on 9/22/16.
  */
 
-public class WorldView extends View {
+public class WorldView extends View implements CircleView{
 
 	private Paint mBackgroundPaint;
 	private Paint mBorderPaint;
@@ -54,5 +54,20 @@ public class WorldView extends View {
 		canvas.drawCircle(centerX, centerY, radius, mBackgroundPaint);
 		canvas.drawCircle(centerX, centerY, radius, mBorderPaint);
 
+	}
+
+	@Override
+	public int getCircleCenterX() {
+		return getCenterX();
+	}
+
+	@Override
+	public int getCircleCenterY() {
+		return getCenterY();
+	}
+
+	@Override
+	public int getSize() {
+		return radius;
 	}
 }
