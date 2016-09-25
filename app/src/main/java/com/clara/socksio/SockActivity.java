@@ -22,15 +22,10 @@ import java.util.Random;
  * TODO Dryers can still get off the edge of the world? Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
  * TODO handle rotation, instance state, stopping stuff on close. Everything needs to be re-centered on rotation.
  *
- * CODE IS MESSY! Utility method to check whether a point is within a circle, for example
- * TODO interface background, interface movesWithPlayer, has shift method
  * TODO int or float? Too many casts
  * TODO app icon
  *
- * TODO is a new SockView - and list of enemy SockViews - being created every tick? (?) Drawing is not working.
- *
  * TODO other forms of animation. Would something else be appropriate?
- *
  *
  * TODO FIREBASE
  *
@@ -40,27 +35,18 @@ import java.util.Random;
  * Startup needs work. First test if connection is available. If so, offer local vs. server play
  * (Should also handle loss of connection in the middle of game)
  * todo deal correctly with no other players available, fall back to no data connection
- * todo delete sock on death (ok) but make sure restart sock has default length
  *
  * todo identify collisions (sorta working? TEST)
  * todo dryer deathmatch. Any part of dryer touch sock = death.
  *
- * Remove dryers. Only for no internet play.
- * Specks can be are generated locally to each device.
- * Generate unique ID for this sock
- * Every clock tick, get location & quantity of other socks, and draw on screen
- * A sock needs a score; a list of segment x-y locations, segment size
- * Locally work out collisions
+ * TODO sock score and leaderboard
  * TODO Game number for dividing socks into possible +1 game
- * Send message to server with new location OR if have died.
- * Check number of other socks to see if have won or not.
  *
- * Major config issues - how to clear data from DB? e.g. if apps crash or idle?
+ * issues - how to clear data from DB? e.g. if apps crash or idle?
  * */
 
 public class SockActivity extends AppCompatActivity implements FirebaseInteraction.ServerDataReadyListener{
 
-	private static final String ALL_SOCKS = "sock_data";
 	FrameLayout mFrame;
 	TextView mGameOver;
 
@@ -138,12 +124,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 					case MotionEvent.ACTION_MOVE: {
 
 						//Log.i(TAG, "action move");
-
-						//tell Sock to move   todo - only if moved more than a little bit.
-
-						//mSock.addSegmentToStart(motionEvent.getX(), motionEvent.getY());
-
-						//Where is touch relative to Sock head?
+						//tell Sock to move  						//Where is touch relative to Sock head?
 
 						float sockHeadX = mSock.getHeadX();
 						float sockHeadY = mSock.getHeadY();
@@ -157,7 +138,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 						//Angle is tan(angle) = opp/adj = xDelta / yDelta
 						angle = (float) Math.atan(yDelta / xDelta);
 
-						if (xDelta < 0 ) { angle += Math.PI; };  //mathy fix
+						if (xDelta < 0 ) { angle += Math.PI; }  //mathy fix
 
 						//So, scaling to triangle with hypotenuse = maxDistanceMoved
 						//    sin(angle) = opp / hyp =  OR  opp = xdistmove = sin(angle) * hyp
@@ -197,7 +178,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		Log.i(TAG, "Adding sock");
 
-
 		if (mSock != null) { mFrame.removeView(mSock); }
 		mSock = new SockView(SockActivity.this, centerX, centerY);
 		mSock.addSegmentToEnd(centerX+10, centerY+10);
@@ -208,6 +188,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//And start game.
 		if (mLocal) {
+			mFrame.addView(mSock);
 			restart();
 		}
 	}
@@ -218,10 +199,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		//Start server game
 
 		Log.i(TAG, "Server game running? " + serverGameRunning);
-		if (serverGameRunning == false) {
+		if (!serverGameRunning) {
 
 			mFrame.addView(mSock);
-			mSock.bringToFront();
 			restart();
 			serverGameRunning = true;
 		}
@@ -229,7 +209,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 
 	private void restart() {
-
 
 		Log.i(TAG, "Start game");
 
@@ -242,7 +221,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		//remove listener from TextView
 		mGameOver.setOnClickListener(null); // no more restarting!
 
-		/** remove old game components - specks, enemy socks, dryers, world... **/
+		/** remove old game components - specks, dryers, world... **/
 
 		if (mSpecks != null) {
 			for (SpeckView speck : mSpecks) {
@@ -258,7 +237,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		mFrame.removeView(mWorld);
 
-		/* Add new game components - specks, enemys, dryers, world... */
+		/* Add new game components - specks, enemies, dryers, world... */
 
 		//Create and add new world
 		mWorld = new WorldView(this, centerX, centerY, worldRadius);
@@ -274,13 +253,13 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		}
 
 		else {
-			//Otherwise, add enemy socks
+			// Removes old Socks, adds new
 			updateEnemySocks();
 		}
 
 
-		updateSock();   // go!
-		updateSpecks();     //shift specks so looks like background scrolls
+		updateSock();
+		updateSpecks();
 
 		mSock.bringToFront();  //Move this player's sock to front
 
@@ -291,20 +270,12 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 			public void run() {
 				Log.i(TAG, "TICK");
 
-//				Log.i(TAG, "world coords xMovDist = " + xMoveDist + " ymoved "  + yMoveDist + " centerX " + centerX + " centerY " + centerY +
-//					" center of world at x "  + mWorld.getCenterX() + ", y " + mWorld.getCenterY());
-
-
 				if (mLocal) {
 					updateSock();
 					updateSpecks();
 					updateDryers();
 					if (!endLocalGame()) {
 						handler.postDelayed(this, period); //run again!
-					} else {
-//						mSock = new SockView(SockActivity.this, centerX, centerY);
-//						mSock.addSegmentToEnd(centerX+10, centerY+10);
-//						mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
 					}
 				}
 
@@ -317,71 +288,68 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 					if (!endFirebaseGame()) {
 						handler.postDelayed(this, period); //run again!
 					} else {
-						//game over, remove self from server
-						mFirebase.removeSelfFromFirebase();
-//						mSock = new SockView(SockActivity.this, centerX, centerY);
-//						mSock.addSegmentToEnd(centerX+10, centerY+10);
-//						mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
-//						mFirebase.setSock(mSock.getSock());
-					}
+						mSock.reset();
+						mFirebase.removeSelfFromFirebase();   //game over, remove self from server
+						}
 				}
 			}
 		}, period);
 
+
 		mFrame.setOnTouchListener(mTouchListener);
+
 	}
 
+
+
 	private void updateEnemySocks() {
-		//todo
 
 		enemySocks = mFirebase.getEnemySocks();
 
-
+		//Remove all Enemy socks
 		if (enemySockViews != null) {
 			for (SockView sock : enemySockViews) {
 				mFrame.removeView(sock);
 			}
 		}
 
+		//Build new ArrayList for Enemy SockView
 		enemySockViews = new ArrayList<>();
 
-
 		if (mFirebase.getEnemySocks() != null) {
-			Log.i(TAG, "There are currently this many enemies" + enemySocks.size());
+
+			//Log.i(TAG, "There are currently this many enemies" + enemySocks.size());
 
 			for (String enemySockKey : enemySocks.keySet()) {
 
 				Sock enemySock = enemySocks.get(enemySockKey);
 
 				Log.i(TAG, "Enemy Sock: " + enemySockKey + " sock: "  + enemySock);
-
 				Log.i(TAG, "Enemy sock world center is (1) " + enemySock.getWorldCenterX() + " " + enemySock.getWorldCenterY());
 
 				SockView enemySockView = new SockView(this, enemySock);
 
-				Log.i(TAG, "Enemy Sock View: " + enemySockView);
+				//Log.i(TAG, "Enemy Sock View: " + enemySockView);
 
 				enemySockView.shift(enemySock.getWorldCenterX(), enemySock.getWorldCenterY());   //TODO got to shift relative to world center??
-
 
 				int playerXdiff =  -mWorld.getCenterX();
 				int playerYdiff =  -mWorld.getCenterY();
 
-				Log.i(TAG, "World, player sock: x" + mSock.worldCenterX + " y " + mSock.worldCenterY + " w x " + mWorld.getCenterX() + " w y " + mWorld.getCenterY());
-
-				Log.i(TAG, "Enemy Sock View after shift 1 : " + enemySockView);
+				//Log.i(TAG, "World, player sock: x" + mSock.worldCenterX + " y " + mSock.worldCenterY + " w x " + mWorld.getCenterX() + " w y " + mWorld.getCenterY());
+				//Log.i(TAG, "Enemy Sock View after shift 1 : " + enemySockView);
 
 
 				enemySockView.shift( playerXdiff, playerYdiff ); //keep on screen  (?)
 
-				Log.i(TAG, "Enemy sock after shift 2 : " + enemySockView);
+				//Log.i(TAG, "Enemy sock after shift 2 : " + enemySockView);
 
 				//The coordinates in this sock's segments are going to start at world center. So a sock needs to store the center offset.
 
 				mFrame.addView(enemySockView);
 				enemySockViews.add(enemySockView);
 
-				 //todo update more efficiently. Making a new View for each sock is not very efficient.
+				//todo update more efficiently. Making a new View for each sock for every clock tick can't be very very efficient.
 
 			}
 		}
@@ -435,7 +403,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 				+ " world radius " + worldRadius + " rad2 " + worldRadius*worldRadius ) ;
 
 
-//		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
+		//		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
 		if (!intersects(mWorld, mSock)) {
 
 			Log.i(TAG, "Sock leaves world");
@@ -447,7 +415,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		if (gameOver) {
 			gameOverText += "\n" ;
-			gameOverText += "SCORE = " + (int) score;
+			gameOverText += "SCORE = " + score;
 			gameOverText += "\n" ;
 			gameOverText += "* tap to replay *";
 			mGameOver.setVisibility(View.VISIBLE);
@@ -462,7 +430,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	private boolean collidedWithEnemySock() {
 
 		for (SockView enemySockView : enemySockViews) {
-
 			//Check all segments
 			for (SockView.Segment s : enemySockView.segments)  {
 				if (intersects(s, mSock)) {
@@ -472,30 +439,17 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		}
 
 		return false;
-
 	}
 
 
-
-
-
-
 	private void makeSpecksAddToView(int number) {
-
-		//mSpecks = new LinkedList<>();
 
 		for (int s = 0 ; s < number ; s++) {
 			SpeckView speck = new SpeckView(this, centerX, centerY, worldRadius);
 			mSpecks.add(speck);
 			mFrame.addView(speck);
 		}
-
-
-		//Log.i(TAG, "Added initial specks: " + mSpecks);
-
 	}
-
-
 
 	private int eatSpecks() {
 
@@ -505,13 +459,11 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		for (SpeckView speck : mSpecks) {
 
-			//under sock? remove
+			//under sock? flag for removal
 			if (intersects(speck, mSock)) {
-
 				mFrame.removeView(speck);
 				score++;
 				specksEaten++;
-				//Log.i(TAG, "Eaten speck, score is " + score);
 				speck.eaten = true;   //flag speck for removal
 			}
 		}
@@ -519,7 +471,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		//Log.i(TAG, "Checking and removing specks. " + mSpecks);
 
 		//TODO a neater way? Filtering the list?
-
 		LinkedList<SpeckView> temp = new LinkedList<>();
 		for (SpeckView speck : mSpecks) {
 			if (!speck.eaten) {
@@ -534,7 +485,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		if (!mLocal) {
 			//regenerate new specks to keep total constant
 			makeSpecksAddToView(specksEaten);
-
 		}
 
 		return specksEaten;
@@ -553,38 +503,6 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 	}
 
-
-//	private boolean intersects(SockView.Segment s, SockView sock) {
-//
-//		int intersect = sock.getSize();
-//
-//		int xdif = Math.abs((int)sock.getHeadX() - (int)s.x);
-//		int ydif = Math.abs((int)sock.getHeadY() - (int)s.y);
-//
-//		if (xdif < intersect && ydif < intersect) {
-//			return true;
-//		}
-//
-//		return  false;
-//	}
-
-//	private boolean intersects(SpeckView speck, SockView sock) {
-//
-//		int intersect = sock.getSize();
-//
-//		int xdif = Math.abs((int)sock.getHeadX() - speck.x);
-//		int ydif = Math.abs((int)sock.getHeadY() - speck.y);
-//
-//		if (xdif < intersect && ydif < intersect) {
-//			return true;
-//		}
-//
-//		return  false;
-//	}
-
-
-
-
 	private void updateSpecks() {
 		for (SpeckView speck : mSpecks) {
 			speck.shift((int)xMoveDist, (int)yMoveDist);
@@ -598,26 +516,24 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 	private void updateSock() {
 
-			//Move sock by adding a new segment and removing last
+		//Move sock by adding a new segment and removing last
 
-			mSock.addSegmentRelativeToHead(xMoveDist, yMoveDist);
+		mSock.addSegmentRelativeToHead(xMoveDist, yMoveDist);
 
-			int specksEaten = eatSpecks();
+		int specksEaten = eatSpecks();
 
-			if (specksEaten == 0) {
-				mSock.removeLast();
-			}
+		if (specksEaten == 0) {
+			mSock.removeLast();
+		}
 
-			mSock.setWorldCenterX(mWorld.getCenterX());
-			mSock.setWorldCenterY(mWorld.getCenterY());
+		mSock.setWorldCenterX(mWorld.getCenterX());
+		mSock.setWorldCenterY(mWorld.getCenterY());
 
-			mSock.invalidate();
+		mSock.invalidate();
 
 		Log.i(TAG, "updated sock, " + mSock);
 
-		//Log.i(TAG, mSock.toString());
-
-		}
+	}
 
 	@Override
 	public void onPause() {

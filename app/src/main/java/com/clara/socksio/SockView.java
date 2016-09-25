@@ -33,6 +33,21 @@ public class SockView extends View implements CircleView {
 
 	private int mScore;
 
+	public void reset () {
+		mScore = 0;
+		Segment s0 = segments.get(0);
+		Segment s1 = segments.get(1);
+		Segment s2 = segments.get(2);  //hacky!
+
+		segments.clear();
+		segments.add(s0);
+		segments.add(s1);
+		segments.add(s2);
+
+
+
+	}
+
 	@Override
 	public int getCircleCenterX() {
 		return (int)getHeadX();
