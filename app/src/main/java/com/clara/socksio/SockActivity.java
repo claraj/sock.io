@@ -24,6 +24,9 @@ import java.util.Random;
  *
  * TODO int or float? Too many casts
  * TODO app icon
+ * TODO specks spawning outside world
+ *
+ * TODO spck spawn location, not on top of other socks.
  *
  * TODO other forms of animation. Would something else be appropriate?
  *
