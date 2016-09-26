@@ -100,9 +100,9 @@ public class FirebaseInteraction {
 
 				Log.i(TAG, "value event " + dataSnapshot);
 
-				if (mEnemySocks == null) {
+				//if (mEnemySocks == null) {
 					mEnemySocks = new HashMap<String, Sock>();
-				}
+				//}
 
 				for (DataSnapshot ds : dataSnapshot.getChildren()) {
 

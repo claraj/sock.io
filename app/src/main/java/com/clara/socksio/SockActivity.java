@@ -1,5 +1,8 @@
 package com.clara.socksio;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -22,11 +25,14 @@ import java.util.Random;
  * TODO Dryers can still get off the edge of the world? Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
  * TODO handle rotation, instance state, stopping stuff on close. Everything needs to be re-centered on rotation.
  *
+ * TODO make full screen. Set up immersive mode https://developer.android.com/training/system-ui/immersive.html
  * TODO int or float? Too many casts
  * TODO app icon
  * TODO specks spawning outside world
  *
  * TODO spck spawn location, not on top of other socks.
+ * TODO server game with no other sock crashes on load. Make test sock for testing
+ *
  *
  * TODO other forms of animation. Would something else be appropriate?
  *
@@ -65,7 +71,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	private static LinkedList<DryerView> mDryers;
 
 	private int speckCount = 200;
-	private int dryerCount = 5;
+	private int dryerCount = 10;
 
 	private long period = 150;            // time between ms
 	private long maxDistanceMoved = 15;   //How far a sock can move in one tick
@@ -100,9 +106,15 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		mFrame = (FrameLayout) findViewById(R.id.fullscreen_content);
 		mGameOver = (TextView) findViewById(R.id.game_over_msg);
 
-		//Internet connection?
+
 		mFirebase = new FirebaseInteraction(this);
-		mLocal = !mFirebase.connectedToFirebase();
+
+		//Internet connection?
+		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+		boolean internetConnection = (activeNetwork != null && activeNetwork.isConnectedOrConnecting());
+
+		mLocal = internetConnection;
 
 		String gameTypeMessage = mLocal ? "No connection to server. Battle the dryers" : "Sock VS Sock";
 		Toast.makeText(this, gameTypeMessage, Toast.LENGTH_SHORT).show();
@@ -181,18 +193,24 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		Log.i(TAG, "Adding sock");
 
-		if (mSock != null) { mFrame.removeView(mSock); }
+		if (mSock != null) {
+			mFrame.removeView(mSock);
+		}
+
 		mSock = new SockView(SockActivity.this, centerX, centerY);
 		mSock.addSegmentToEnd(centerX+10, centerY+10);
 		mSock.addSegmentToEnd(centerX+20, centerY+20);    //TODO init possibly not in the exact center to avoid collisions?
-		mFirebase.setSock(mSock.getSock());
-		mFirebase.getDataAboutOtherSocks();   //This is what calls the callback serverDataAvailable
-
 
 		//And start game.
 		if (mLocal) {
+			//If local. Don't need to wait for Firebase data.
 			mFrame.addView(mSock);
 			restart();
+		} else {
+			//If server game, request data from Firebase
+			mFirebase.setSock(mSock.getSock());
+			mFirebase.getDataAboutOtherSocks();   //This is what calls the callback serverDataAvailable
+
 		}
 	}
 
@@ -407,7 +425,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 
 		//		if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
-		if (!intersects(mWorld, mSock)) {
+		if (!intersects(mWorld, mSock, 0)) {
 
 			Log.i(TAG, "Sock leaves world");
 			gameOverText = "YOU FELL OFF THE WORLD";
@@ -435,7 +453,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		for (SockView enemySockView : enemySockViews) {
 			//Check all segments
 			for (SockView.Segment s : enemySockView.segments)  {
-				if (intersects(s, mSock)) {
+				if (intersects(s, mSock, 10)) {
 					return true;
 				}
 			}
@@ -463,7 +481,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		for (SpeckView speck : mSpecks) {
 
 			//under sock? flag for removal
-			if (intersects(speck, mSock)) {
+			if (intersects(speck, mSock, 0)) {
 				mFrame.removeView(speck);
 				score++;
 				specksEaten++;
@@ -495,9 +513,11 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	}
 
 
-	private boolean intersects(CircleView view1, CircleView view2) {
+	private boolean intersects(CircleView view1, CircleView view2, int delta) {
 
 		int intersect = view1.getSize() + view2.getSize();
+
+		intersect = intersect - delta;
 
 		int xdif = Math.abs(view1.getCircleCenterX() - view2.getCircleCenterX());
 		int ydif = Math.abs(view1.getCircleCenterY() - view2.getCircleCenterY());
@@ -542,8 +562,8 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	public void onPause() {
 		super.onPause();
 		//remove from server
-		//Stop game ! //tODO !!! Stop clock ticks
-		mFirebase.removeSelfFromFirebase();
+		//Stop game ! //tODO Stop clock ticks
+		//mFirebase.removeSelfFromFirebase(); ?
 	}
 
 
@@ -575,7 +595,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		//		}
 
 
-		if (! intersects(mWorld, mSock)) {
+		if (! intersects(mWorld, mSock, 0)) {
 			//if (xdiff*xdiff + ydiff*ydiff > worldRadius*worldRadius) {
 			Log.i(TAG, "Sock leaves world");
 			gameOverText = "YOU FELL OFF THE WORLD";
