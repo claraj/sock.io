@@ -13,6 +13,13 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.clara.socksio.actors.CircleView;
+import com.clara.socksio.actors.DryerView;
+import com.clara.socksio.actors.SockView;
+import com.clara.socksio.actors.SpeckView;
+import com.clara.socksio.actors.WorldView;
+import com.clara.socksio.firebase.FirebaseInteraction;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -22,36 +29,34 @@ import java.util.Random;
 /**
  *
  *
- * TODO Dryers can still get off the edge of the world? Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it. Prefer washing machine :)
- * TODO handle rotation, instance state, stopping stuff on close. Everything needs to be re-centered on rotation.
+ * TODO Dryers can still get off the edge of the world? Prevailing direction needs to be set to point toward center.  Crop dryer png and/or get someone who can draw to draw it.
+ * TODO handle rotation, instance state, stopping stuff on close. Everything needs to be re-centered correctly on rotation.
  *
  * TODO make full screen. Set up immersive mode https://developer.android.com/training/system-ui/immersive.html
- * TODO int or float? Too many casts
+ * TODO int or float? Too many casts(?)
+ * TODO excessive public variables (?)
  * TODO app icon
  * TODO specks spawning outside world
  *
- * TODO spck spawn location, not on top of other socks.
+ * TODO more intelligent sock spawn location, not on top of other socks.
  * TODO server game with no other sock crashes on load. Make test sock for testing
  *
+ * TODO pause game as app stops/starts
  *
  * TODO other forms of animation. Would something else be appropriate?
  *
- * TODO FIREBASE
- *
  * todo sync the local data with firebase data more efficiently. Should not create new SockViews every tick. Should update existing sockviews.
  *
- * todo deal correctly with no data connection
- * Startup needs work. First test if connection is available. If so, offer local vs. server play
+ * TODO Startup needs work. First test if connection is available. If so, offer local vs. server play
  * (Should also handle loss of connection in the middle of game)
  * todo deal correctly with no other players available, fall back to no data connection
  *
- * todo identify collisions (sorta working? TEST)
- * todo dryer deathmatch. Any part of dryer touch sock = death.
+ * todo dryer deathmatch if player eliminates all other socks. Any part of dryer touch sock = death.
  *
  * TODO sock score and leaderboard
- * TODO Game number for dividing socks into possible +1 game
+ * TODO Game number for dividing socks into more than one game, once this becomes a huge global smash hit .... :)
  *
- * issues - how to clear data from DB? e.g. if apps crash or idle?
+ * TODO clear data from DB? e.g. if apps crash or idle, sock data still hangs around in DB
  * */
 
 public class SockActivity extends AppCompatActivity implements FirebaseInteraction.ServerDataReadyListener{
@@ -112,9 +117,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 		//Internet connection?
 		ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-		boolean internetConnection = (activeNetwork != null && activeNetwork.isConnectedOrConnecting());
+		boolean internetConnection = activeNetwork != null  && activeNetwork.isConnectedOrConnecting();
 
-		mLocal = internetConnection;
+		mLocal = !internetConnection;
 
 		String gameTypeMessage = mLocal ? "No connection to server. Battle the dryers" : "Sock VS Sock";
 		Toast.makeText(this, gameTypeMessage, Toast.LENGTH_SHORT).show();
@@ -203,7 +208,7 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		//And start game.
 		if (mLocal) {
-			//If local. Don't need to wait for Firebase data.
+			//If local. Don't need to wait for Firebase data, play with local enemy dryers
 			mFrame.addView(mSock);
 			restart();
 		} else {
@@ -561,8 +566,9 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 	@Override
 	public void onPause() {
 		super.onPause();
-		//remove from server
-		//Stop game ! //tODO Stop clock ticks
+		//TODO remove sock from server? Remember this will also be called on app rotation, so what's the correct behavior here?
+		//Maybe if user rotates app, they will need to restart?
+		//Stop game ! //TODO Stop clock ticks
 		//mFirebase.removeSelfFromFirebase(); ?
 	}
 
@@ -741,6 +747,8 @@ public class SockActivity extends AppCompatActivity implements FirebaseInteracti
 
 		return  false;
 	}
+
+
 
 
 

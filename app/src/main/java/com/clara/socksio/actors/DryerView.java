@@ -1,4 +1,4 @@
-package com.clara.socksio;
+package com.clara.socksio.actors;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -9,6 +9,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
+import com.clara.socksio.R;
+
 import java.util.Random;
 
 /**
@@ -18,14 +20,12 @@ import java.util.Random;
 public class DryerView extends View {
 
 
-
 	public void setX(int x) {
 		this.x = x;
 	}
 	public void setY(int y) {
 		this.y = y;
 	}
-
 
 
 	private int height;

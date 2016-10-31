@@ -1,4 +1,4 @@
-package com.clara.socksio;
+package com.clara.socksio.actors;
 
 /**
  * Created by admin on 9/24/16.

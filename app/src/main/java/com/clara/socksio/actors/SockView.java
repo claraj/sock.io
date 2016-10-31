@@ -1,4 +1,4 @@
-package com.clara.socksio;
+package com.clara.socksio.actors;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -6,15 +6,15 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.view.View;
 
+import com.clara.socksio.Sock;
+import com.clara.socksio.actors.CircleView;
 import com.google.firebase.database.Exclude;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Random;
 
 /**
- * Created by admin on 9/22/16.
+ * Created by clara on 9/22/16.
  */
 
 public class SockView extends View implements CircleView {
@@ -29,7 +29,7 @@ public class SockView extends View implements CircleView {
 	protected int mSize = 20;
 
 	//List of segments central co-ordinates
-	ArrayList<Segment> segments;
+	public ArrayList<Segment> segments;
 
 	private int mScore;
 
@@ -96,7 +96,7 @@ public class SockView extends View implements CircleView {
 	}
 
 	@IgnoreExtraProperties
-	static class Segment  implements CircleView{
+	public static class Segment  implements CircleView{
 
 		float x;
 		float y;

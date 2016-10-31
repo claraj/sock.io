@@ -1,4 +1,4 @@
-package com.clara.socksio;
+package com.clara.socksio.actors;
 
 
 import android.content.Context;
@@ -6,11 +6,13 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.view.View;
 
+import com.clara.socksio.actors.CircleView;
+
 /**
  * Created by admin on 9/22/16.
  */
 
-public class WorldView extends View implements CircleView{
+public class WorldView extends View implements CircleView {
 
 	private Paint mBackgroundPaint;
 	private Paint mBorderPaint;

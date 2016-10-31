@@ -1,27 +1,25 @@
-package com.clara.socksio;
+package com.clara.socksio.actors;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.util.Log;
 import android.view.View;
-import android.widget.FrameLayout;
+
+import com.clara.socksio.actors.CircleView;
 
 import java.util.Random;
-
-import static android.content.ContentValues.TAG;
 
 /**
  * Created by clara on 9/22/16.
  */
 
-class SpeckView extends View implements CircleView{
+public class SpeckView extends View implements CircleView {
 
 	//Draw at random location
 
 	private int size = 10;
 
-	boolean eaten = false;
+	public boolean eaten = false;
 
 	Paint mPaint;
 

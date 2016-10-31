@@ -1,7 +1,8 @@
-package com.clara.socksio;
+package com.clara.socksio.firebase;
 
 import android.util.Log;
 
+import com.clara.socksio.Sock;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -145,12 +146,12 @@ public class FirebaseInteraction {
 
 	}
 
-	HashMap<String, Sock> getEnemySocks() {
+	public HashMap<String, Sock> getEnemySocks() {
 		return mEnemySocks;
 	}
 
 
-	void removeSelfFromFirebase() {
+	public void removeSelfFromFirebase() {
 
 //		DatabaseReference ref = mSockDatabaseRef.child(ALL_SOCKS_KEY).child(sockKey);
 //		ref.removeValue();
@@ -162,7 +163,7 @@ public class FirebaseInteraction {
 	}
 
 
-	 void sendNewStateToFirebase(Sock sock) {
+	public void sendNewStateToFirebase(Sock sock) {
 
 		//TODO where is this sock, and current score
 
@@ -173,7 +174,7 @@ public class FirebaseInteraction {
 	}
 
 
-	 boolean connectedToFirebase() {
+	public boolean connectedToFirebase() {
 
 
 		 return (mSockDatabaseRef != null) ;   //did we end up with a db reference?
@@ -207,7 +208,7 @@ public class FirebaseInteraction {
 	}
 
 
-	interface ServerDataReadyListener {
+	public interface ServerDataReadyListener {
 		void serverDataAvailable();
 	}
 

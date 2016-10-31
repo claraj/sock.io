@@ -1,9 +1,11 @@
 package com.clara.socksio;
 
+import com.clara.socksio.actors.SockView;
+
 import java.util.ArrayList;
 
 /**
- *  Sock represents objects store in Firebase.
+ *  Sock represents objects stored in Firebase.
  */
 
 public class Sock {
@@ -23,8 +25,8 @@ public class Sock {
 		this.score = score;
 	}
 
-	int score;
-	int size;
+	public int score;
+	public int size;
 
 
 	public int getWorldCenterY() {
