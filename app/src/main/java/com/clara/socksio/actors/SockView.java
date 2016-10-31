@@ -12,6 +12,7 @@ import com.google.firebase.database.Exclude;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by clara on 9/22/16.
@@ -156,6 +157,8 @@ public class SockView extends View implements CircleView {
 		mSize = sock.size;
 		mScore = sock.getScore();
 
+		setStartColors();
+
 	}
 
 
@@ -170,10 +173,13 @@ public class SockView extends View implements CircleView {
 
 		Log.i(TAG, "new sock" + segments);
 
+		setStartColors();
+
 		//this.x = x ; this.y = y;
 		mPaint.setStyle(Paint.Style.FILL);
-
 	}
+
+
 
 
 	//Add to end of segments (?)
@@ -198,18 +204,37 @@ public class SockView extends View implements CircleView {
 	}
 
 
+	/// todo create a selection of nice start colors and pick one at random from that.
+	//Also would like to avoid colors similar to the background
+	private void setStartColors() {
+		Random rnd = new Random();
+		rnd.setSeed(System.currentTimeMillis());
+
+		redStart = rnd.nextInt(255);
+		blueStart = rnd.nextInt(255);
+		greenStart = rnd.nextInt(255);
+
+		Log.d(TAG, "Start colors r: " + redStart + " g: " + greenStart + " b: " + blueStart);
+	}
+
+	int redStart;
+	int blueStart;
+	int greenStart;
+
 	@Override
 	protected void onDraw(Canvas canvas) {
 		Log.i(TAG, "drawing " + x + " " + y);
 
-		int red = 50;
-		int blue = 100;
+		int red = redStart;
+		int blue = blueStart;
+		int green = greenStart;      //cycle just red and blue to keep colors within similar palette
 
-		if (segments != null) {            ///todo why are segments null? What is FB returning?
+		if (segments != null) {
 			for (Segment s : segments) {
 				red = (red + 20) % 255;
 				blue = (blue + 15) % 255;
-				mPaint.setARGB(150, red, 0, blue);
+
+				mPaint.setARGB(150, red, green, blue);
 				canvas.drawCircle(s.x, s.y, mSize, mPaint);
 			}
 		}
